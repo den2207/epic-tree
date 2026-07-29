@@ -61,10 +61,14 @@ untouched.
   output or commit hash in the `evidence` column.
 - **Ledger over re-proving**: known blockers and non-regressions get an `L-NN` ID once
   and are referenced, not re-derived, by later sessions.
-- **Tool-agnostic files**: fixed sections, stable IDs, one fact per line, a
-  `contract:` line in every file — any AI executor (not just Claude) can consume them;
-  the charter's Non-negotiables block is designed to be embedded verbatim in any
-  executor prompt.
+- **Tool-agnostic files, Claude Code adapters**: the epic files are plain
+  markdown with fixed sections, stable IDs, and a `contract:` line each — any AI agent
+  can consume them. The hook and the three skills are the *Claude Code adapter*;
+  non-Claude agents (Codex, Cursor, Copilot CLI, …) self-discover the epic via the
+  generated `AGENTS.md` at the epic root, which carries the bootstrap: read charter
+  Non-negotiables verbatim, read state + active slice, create your own journal file,
+  respect the write discipline of your role. Orchestrators additionally embed the
+  Non-negotiables block in every executor prompt regardless of tool.
 
 ## Install
 

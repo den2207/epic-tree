@@ -13,10 +13,18 @@ contract: written once by `epic-new` (later edits only by explicit human decisio
 ## Roles
 
 <!-- Single-writer rule lives here. Exactly one coordinator. -->
-| role | agent/model | effort | writes |
-|---|---|---|---|
-| coordinator | <e.g. Claude Opus> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |
-| executor | <e.g. Claude Sonnet / Codex> | <e.g. medium> | own journal file ONLY |
+| role | provider/surface | model | effort | writes |
+|---|---|---|---|---|
+| coordinator | <e.g. Claude Code> | <e.g. Opus> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |
+| executor | <e.g. Claude Code agent / Codex MCP / Cursor> | <e.g. Sonnet / gpt-5.x> | <e.g. medium> | own journal file ONLY |
+
+## Executor bootstrap (any tool)
+
+An executor that does not run the Claude Code hook/skills must, before working:
+read this charter (Non-negotiables are binding verbatim) → read state.md and the
+active slice row in plan.md → create its own journal file (see AGENTS.md at the epic
+root) → write nothing else. The orchestrator embeds Non-negotiables in every
+executor prompt regardless of tool.
 
 ## Repo topology
 
@@ -30,7 +38,8 @@ contract: written once by `epic-new` (later edits only by explicit human decisio
 - <when to proceed without asking, e.g.: execute plan.md slices back-to-back>
 - <when to stop, e.g.: stop only at gated actions (G-NN) and context thresholds>
 
-## Global rules
+## Global rules (coordinator-only pointer)
 
-Context thresholds, git conventions, language policy: see the user-level rules of the
-orchestrating agent (e.g. CLAUDE.md). Do not duplicate them here — only epic deltas above.
+Context thresholds, git conventions, language policy live in the coordinator's own
+rule files (e.g. CLAUDE.md) and are NOT visible to other tools. Any rule an EXECUTOR
+must obey belongs in Non-negotiables above — portable and self-contained.

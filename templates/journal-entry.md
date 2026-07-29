@@ -1,6 +1,6 @@
 # journal — <YYYY-MM-DD> <HHMM> <role>
 
-contract: one file per session, named journal/<YYYY-MM-DD>-<HHMM>-<role>.md (HHMM = session start) / written append-only by that session ONLY / merged into state.md by the coordinator at handoff
+contract: one file per session, named journal/<YYYY-MM-DD>-<HHMM>-<role>[-<unique-token>].md (HHMM = session start; add a token if the name exists — never reuse a file) / created by the session ITSELF before working, finalized before exit, regardless of tool / merged into state.md by the coordinator at handoff
 
 ## Done
 

@@ -26,10 +26,12 @@ epic-start/epic-handoff skills operate on. Templates live in this repo's `templa
    - `state.md` — initial state: active slice S-01, per-repo git state (verify against
      `git log`/`git status`, do not guess), next step.
    - `ledger.md`, `gated-actions.md` — seed with known facts/gates from the plan.
-4. **Activate**: write `<root>/.claude/epics/ACTIVE` — first line the slug, then one
+4. **Non-Claude adapter**: copy `templates/AGENTS.md` to `<root>/AGENTS.md` (adjust
+   the slug) so Codex/Cursor-family agents self-discover the epic and its write rules.
+5. **Activate**: write `<root>/.claude/epics/ACTIVE` — first line the slug, then one
    repo name per line (must match charter topology). For migrations of already-running
    work, let the user review the directory and write ACTIVE themselves.
-5. Confirm: print the tree, the active slice, and the roles table.
+6. Confirm: print the tree, the active slice, and the roles table.
 
 ## Guardrails
 
