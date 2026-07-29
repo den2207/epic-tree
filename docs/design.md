@@ -71,6 +71,19 @@ dressed up as a mechanism.
 with a banner pointing to the epic dir; uncertain statuses default to `todo`; the
 human reviews the migrated epic and writes ACTIVE themselves.
 
+## Prompting-guide alignment (2026-07)
+
+Audited against Anthropic's model-specific guides —
+[prompting Claude Fable 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5)
+and [prompting Claude Opus 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5).
+The evidence-grounding, short imperative guardrails, explicit do/don't boundaries, and
+the ledger's "one lesson per entry, reference don't re-derive" pattern match the
+guides directly; the autonomy-contract template reuses their pause-only-for
+(irreversible / scope change / user-only input) phrasing. Deliberately absent, per the
+guides: narrative self-verification instructions ("double-check") and prescriptive
+behavior enumerations — verification here is tool evidence, not prose. If a skill ever
+wraps in-session subagents, add delegation-scope caps then (Opus 5 guide).
+
 ## Review provenance
 
 The v1 design went through a 3-reviewer adversarial pass (two independent lenses +

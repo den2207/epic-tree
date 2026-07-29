@@ -15,7 +15,7 @@ contract: written once by `epic-new` (later edits only by explicit human decisio
 <!-- Single-writer rule lives here. Exactly one coordinator. -->
 | role | provider/surface | model | effort | writes |
 |---|---|---|---|---|
-| coordinator | <e.g. Claude Code> | <e.g. Opus> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |
+| coordinator | <e.g. Claude Code> | <e.g. Opus / Fable> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |
 | executor | <e.g. Claude Code agent / Codex MCP / Cursor> | <e.g. Sonnet / gpt-5.x> | <e.g. medium> | own journal file ONLY |
 
 ## Executor bootstrap (any tool)
@@ -35,8 +35,10 @@ executor prompt regardless of tool.
 
 ## Autonomy contract
 
-- <when to proceed without asking, e.g.: execute plan.md slices back-to-back>
-- <when to stop, e.g.: stop only at gated actions (G-NN) and context thresholds>
+- <when to proceed without asking, e.g.: reversible actions that follow from plan.md
+  slices — execute back-to-back, no confirmation pauses>
+- <when to stop, e.g.: only at gated actions (G-NN), destructive/irreversible steps,
+  real scope changes, context thresholds, or input only the user can provide>
 
 ## Global rules (coordinator-only pointer)
 
