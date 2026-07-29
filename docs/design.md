@@ -84,6 +84,49 @@ guides: narrative self-verification instructions ("double-check") and prescripti
 behavior enumerations — verification here is tool evidence, not prose. If a skill ever
 wraps in-session subagents, add delegation-scope caps then (Opus 5 guide).
 
+## Ecosystem sweep (2026-07) and v2 backlog
+
+A second, broader landscape pass after v1 shipped checked whether any cross-agent
+convention already covers this niche. None does — but three findings shaped changes:
+
+- [AGENTS.md](https://agents.md) is the real cross-brand standard (Linux Foundation
+  governance since late 2025; native readers include Codex, Cursor, Copilot,
+  Gemini CLI, Aider, Zed, Windsurf/Devin). It is static-rules-only by design — no
+  live state, permissions, or model routing — exactly the half this repo carries.
+  Claude Code does NOT read AGENTS.md natively (official workaround: an `@AGENTS.md`
+  import or a symlink); irrelevant here, since Claude Code gets the richer hook
+  injection instead.
+- Config unifiers ([ruler](https://github.com/intellectronica/ruler),
+  [rulesync](https://github.com/dyoshikawa/rulesync)) solve the N-native-filenames
+  problem with generated files inside managed-block markers. That marker convention
+  is borrowed: the AGENTS.md adapter is delimited by `BEGIN/END epic-harness adapter`
+  comments, so regeneration replaces its own block and never touches hand-written
+  content around it.
+- No cross-tool convention exists for per-role model routing in a repo file — every
+  tool pins models in its own config (Codex `config.toml`, Claude Code
+  `settings.json`). The charter roles table stays the single declaration; the launch
+  command of each surface remains the enforcement point.
+
+Independent validation, no changes needed:
+[Cline Memory Bank](https://docs.cline.bot/best-practices/memory-bank) converged on
+the same stable/live file split (its documented weaknesses — token cost and staleness
+— are what the 9k budget and git reconciliation address), and
+[Anthropic's long-running-agent harness](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
+converged on evidence-gated progress files.
+
+v2 backlog, deliberately not built yet:
+
+1. **Local MCP server over state/ledger/plan** (`get_active_slice`,
+   `record_evidence`, `next_gate`) — turns the single-writer and evidence rules from
+   prose guardrails into code-enforced tools any MCP-capable agent can call
+   (pattern: [claude-task-master](https://github.com/eyaltoledano/claude-task-master),
+   [Beads](https://github.com/steveyegge/beads)). Closes the biggest honest gap
+   named under "Prose discipline" above.
+2. **Git-mergeable ledger/journal encoding** (Beads-style ID-per-line) — only if
+   concurrent executors across worktrees ever append to the same file.
+3. **Watch the AGENTS.md spec** for state/permission extensions; `gated-actions.md`
+   is a candidate pattern to propose upstream rather than keep proprietary.
+
 ## Review provenance
 
 The v1 design went through a 3-reviewer adversarial pass (two independent lenses +

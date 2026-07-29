@@ -65,10 +65,19 @@ untouched.
   markdown with fixed sections, stable IDs, and a `contract:` line each — any AI agent
   can consume them. The hook and the three skills are the *Claude Code adapter*;
   non-Claude agents (Codex, Cursor, Copilot CLI, …) self-discover the epic via the
-  generated `AGENTS.md` at the epic root, which carries the bootstrap: read charter
-  Non-negotiables verbatim, read state + active slice, create your own journal file,
-  respect the write discipline of your role. Orchestrators additionally embed the
-  Non-negotiables block in every executor prompt regardless of tool.
+  generated `AGENTS.md` at the epic root ([the cross-tool standard](https://agents.md)),
+  which carries the bootstrap: read charter Non-negotiables verbatim, read state +
+  active slice, create your own journal file, respect the write discipline of your
+  role. The generated content sits inside `BEGIN/END epic-harness adapter` markers,
+  so regeneration replaces only its own block and hand-written AGENTS.md content
+  survives. Orchestrators additionally embed the Non-negotiables block in every
+  executor prompt regardless of tool.
+
+## Roadmap
+
+A local MCP server exposing `get_active_slice` / `record_evidence` / `next_gate`
+would turn the write discipline from prose rules into code-enforced tools for any
+MCP-capable agent — see the ecosystem sweep in [docs/design.md](docs/design.md).
 
 ## Install
 

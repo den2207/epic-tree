@@ -28,7 +28,9 @@ epic-start/epic-handoff skills operate on. Templates live in this repo's `templa
    - `ledger.md`, `gated-actions.md` — seed with known facts/gates from the plan.
 4. **Non-Claude adapter**: copy `templates/AGENTS.md` to `<root>/AGENTS.md` (adjust
    the slug) so Codex/Cursor-family agents self-discover the epic and its write rules.
-   If `<root>/AGENTS.md` already exists, append the epic block — never overwrite it.
+   If `<root>/AGENTS.md` already exists: replace the content between the
+   `BEGIN/END epic-harness adapter` markers if present, otherwise append the whole
+   marked block at the end. Never modify text outside the markers.
 5. **Activate**: write `<root>/.claude/epics/ACTIVE` — first line the slug, then one
    repo name per line (must match charter topology). For migrations of already-running
    work, let the user review the directory and write ACTIVE themselves.
