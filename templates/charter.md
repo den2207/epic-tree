@@ -13,18 +13,23 @@ contract: written once by `epic-new` (later edits only by explicit human decisio
 ## Roles
 
 <!-- Single-writer rule lives here. Exactly one coordinator. -->
-| role | provider/surface | model | effort | writes |
+| role | surface (provider) | model id | reasoning effort | writes (inside .claude/epics/) |
 |---|---|---|---|---|
-| coordinator | <e.g. Claude Code> | <e.g. Opus / Fable> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |
-| executor | <e.g. Claude Code agent / Codex MCP / Cursor> | <e.g. Sonnet / gpt-5.x> | <e.g. medium> | own journal file ONLY |
+| coordinator | <e.g. Claude Code> | <exact id, e.g. claude-opus-5> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |
+| executor | <e.g. Codex MCP / Claude Code agent / Cursor> | <exact id, e.g. gpt-5.6-luna / claude-sonnet-5> | <e.g. xhigh / medium> | own journal file ONLY |
+
+Filled-in charters record exact pinned model identifiers, not tier nicknames.
+Editing the active slice's source files in member repos is every role's normal work —
+the "writes" column scopes only the epic-control files.
 
 ## Executor bootstrap (any tool)
 
 An executor that does not run the Claude Code hook/skills must, before working:
 read this charter (Non-negotiables are binding verbatim) → read state.md and the
 active slice row in plan.md → create its own journal file (see AGENTS.md at the epic
-root) → write nothing else. The orchestrator embeds Non-negotiables in every
-executor prompt regardless of tool.
+root) → inside `.claude/epics/` write nothing else; keep working until the slice's
+verify command passes or a named gate/blocker stops you. The process launching an
+executor embeds Non-negotiables in its prompt regardless of tool.
 
 ## Repo topology
 
@@ -38,7 +43,8 @@ executor prompt regardless of tool.
 - <when to proceed without asking, e.g.: reversible actions that follow from plan.md
   slices — execute back-to-back, no confirmation pauses>
 - <when to stop, e.g.: only at gated actions (G-NN), destructive/irreversible steps,
-  real scope changes, context thresholds, or input only the user can provide>
+  real scope changes, the runtime limits of your own surface (for Claude Code — the
+  global context thresholds), or input only the user can provide>
 
 ## Global rules (coordinator-only pointer)
 
