@@ -30,7 +30,7 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
    state verified against `git log`/`status` (never from memory), next step,
    blocked-on, relevant L-IDs, `updated: <ISO ts> by coordinator`. Max 40 lines.
 8. **Epic finished?** All slices done with evidence → delete `ACTIVE`, remove the
-   epic-harness marked block from `<root>/AGENTS.md` (only the block — text outside
+   epic-tree marked block from `<root>/AGENTS.md` (only the block — text outside
    the markers stays; delete the file if the block was its entire content), write a
    final journal entry, and tell the user the epic is closed and archivable.
 

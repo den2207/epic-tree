@@ -1,5 +1,5 @@
 #!/bin/bash
-# epic-harness SessionStart hook: injects the active epic's charter + state + ledger
+# epic-tree SessionStart hook: injects the active epic's charter + state + ledger
 # index as additionalContext. Silent (exit 0, no output) when no epic applies.
 set -u
 LC_ALL=C
@@ -34,12 +34,14 @@ common=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir 2>/dev/
 # Nearest ACTIVE wins; never consider $HOME itself or /.
 root=""
 base=""
-if [ -n "${EPIC_HARNESS_ROOT:-}" ]; then
-  base=$(epics_base "$EPIC_HARNESS_ROOT")
+forced=""
+if [ -n "${EPIC_TREE_ROOT:-}" ]; then
+  base=$(epics_base "$EPIC_TREE_ROOT")
   if [ -n "$base" ]; then
-    root=$EPIC_HARNESS_ROOT
+    root=$EPIC_TREE_ROOT
+    forced=1
   else
-    emit "epic-harness: EPIC_HARNESS_ROOT=$EPIC_HARNESS_ROOT has no epics/ACTIVE (nor legacy .claude/epics/ACTIVE) — unset or fix it."
+    emit "epic-tree: EPIC_TREE_ROOT=$EPIC_TREE_ROOT has no epics/ACTIVE (nor legacy .claude/epics/ACTIVE) — unset or fix it."
     exit 0
   fi
 else
@@ -55,12 +57,13 @@ fi
 active="$base/ACTIVE"
 slug=$(head -n1 "$active" | tr -d '[:space:]')
 if [ -z "$slug" ] || [ ! -d "$base/$slug" ]; then
-  emit "epic-harness: broken ACTIVE at $active (epic dir for '$slug' not found) — fix or remove it."
+  emit "epic-tree: broken ACTIVE at $active (epic dir for '$slug' not found) — fix or remove it."
   exit 0
 fi
 
 # Membership gate: a session inside a repo the epic does not list stays untouched.
-if [ "$start" != "$root" ]; then
+# Skipped when the root was forced via EPIC_TREE_ROOT.
+if [ -z "$forced" ] && [ "$start" != "$root" ]; then
   rel=${start#"$root"/}
   repo=${rel%%/*}
   repos=$(tail -n +2 "$active" | tr -d ' ')
@@ -75,11 +78,11 @@ charter=""; state=""; lindex=""
 [ -f "$epic_dir/state.md" ] && state=$(cat "$epic_dir/state.md")
 [ -f "$epic_dir/ledger.md" ] && lindex=$(grep -E '^\| L-[0-9]+' "$epic_dir/ledger.md" | cut -c1-160 || true)
 if [ -z "$charter$state" ]; then
-  emit "epic-harness: epic '$slug' at $epic_dir has no charter.md/state.md — scaffold incomplete."
+  emit "epic-tree: epic '$slug' at $epic_dir has no charter.md/state.md — scaffold incomplete."
   exit 0
 fi
 
-header="[epic-harness] active epic: $slug @ $epic_dir (resolved from cwd $cwd). Follow the charter Non-negotiables; run the epic-start skill before working."
+header="[epic-tree] active epic: $slug @ $epic_dir (resolved from cwd $cwd). Follow the charter Non-negotiables; run the epic-start skill before working."
 budget=9000
 
 assemble() {

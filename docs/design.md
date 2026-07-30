@@ -99,7 +99,7 @@ convention already covers this niche. None does — but three findings shaped ch
 - Config unifiers ([ruler](https://github.com/intellectronica/ruler),
   [rulesync](https://github.com/dyoshikawa/rulesync)) solve the N-native-filenames
   problem with generated files inside managed-block markers. That marker convention
-  is borrowed: the AGENTS.md adapter is delimited by `BEGIN/END epic-harness adapter`
+  is borrowed: the AGENTS.md adapter is delimited by `BEGIN/END epic-tree adapter`
   comments, so regeneration replaces its own block and never touches hand-written
   content around it.
 - No cross-tool convention exists for per-role model routing in a repo file — every
@@ -119,9 +119,16 @@ convention already covers this niche. None does — but three findings shaped ch
   Epic files are content read every session by humans and agents — and some agents'
   file-globbing skips dotfiles — so the visible, content-named `epics/` wins over
   `.epics/` and over a tool-named dot-dir. The hook keeps a legacy fallback to
-  `.claude/epics/`. Collision note: the *tool name* epic-harness clashes with the
-  unrelated [epicsagas/epic-harness](https://github.com/epicsagas/epic-harness)
-  (multi-tool agent harness, active) — revisit the project name before publishing.
+  `.claude/epics/`.
+- **Project renamed epic-harness → epic-tree** (2026-07-30). The working name
+  clashed with the unrelated, active
+  [epicsagas/epic-harness](https://github.com/epicsagas/epic-harness) (multi-tool
+  agent harness — same pitch), and a naming sweep showed the niche's plain-English
+  vocabulary is already claimed by same-space tools (kungfu "Continuity for Agent
+  Work", Trellis "the best agent harness", carryover, passdown, throughline, edict).
+  `epic-tree` has clean GitHub and npm namespaces and reads natively in dev
+  vocabulary: git tree, worktree (the hook is worktree-aware), and the `epics/`
+  file tree itself.
 
 Independent validation, no changes needed:
 [Cline Memory Bank](https://docs.cline.bot/best-practices/memory-bank) converged on

@@ -1,6 +1,8 @@
-# epic-harness
+# epic-tree
 
-Context-persistent execution of large, multi-session tasks in Claude Code.
+Long-running AI work, rooted: charter, state, and evidence that survive every
+session, agent, and compaction. Built for Claude Code (hook + skills), readable
+by any agent via AGENTS.md.
 
 ## The problem
 
@@ -74,7 +76,7 @@ under the legacy `.claude/epics/` path keep working — the hook falls back to i
   generated `AGENTS.md` at the epic root ([the cross-tool standard](https://agents.md)),
   which carries the bootstrap: read charter Non-negotiables verbatim, read state +
   active slice, create your own journal file, respect the write discipline of your
-  role. The generated content sits inside `BEGIN/END epic-harness adapter` markers,
+  role. The generated content sits inside `BEGIN/END epic-tree adapter` markers,
   so regeneration replaces only its own block and hand-written AGENTS.md content
   survives. Orchestrators additionally embed the Non-negotiables block in every
   executor prompt regardless of tool.

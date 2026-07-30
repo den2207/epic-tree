@@ -23,9 +23,9 @@ Add to the `hooks` object in `~/.claude/settings.json` (path adjusted to your cl
     "hooks": [
       {
         "type": "command",
-        "command": "bash ~/Personal/epic-harness/hooks/session-start.sh",
+        "command": "bash ~/Personal/epic-tree/hooks/session-start.sh",
         "timeout": 15,
-        "statusMessage": "epic-harness"
+        "statusMessage": "epic-tree"
       }
     ]
   }
@@ -50,5 +50,5 @@ charter, and state should appear in the session context.
 
 ## Override
 
-`EPIC_HARNESS_ROOT=<dir>` forces the epic root (must contain `epics/ACTIVE`, or the
+`EPIC_TREE_ROOT=<dir>` forces the epic root (must contain `epics/ACTIVE`, or the
 legacy `.claude/epics/ACTIVE`), bypassing worktree mapping and the walk-up.
