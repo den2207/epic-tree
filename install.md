@@ -48,6 +48,25 @@ Expected: empty output (no ACTIVE epic above `$HOME`). Then create a throwaway e
 dir with `epic-new` in a project and start a new session there — the epic banner,
 charter, and state should appear in the session context.
 
+## 4. Quick demo (no real epic needed)
+
+Fake a minimal epic and run the hook against it — takes under a minute:
+
+```bash
+demo=$(mktemp -d)/group
+mkdir -p "$demo/epics/demo"
+printf 'demo\n' > "$demo/epics/ACTIVE"
+printf '# charter — demo\n\n## Non-negotiables\n- demo rule\n' > "$demo/epics/demo/charter.md"
+printf '# state — demo\n\n## Active slice\nS-01 hello\n' > "$demo/epics/demo/state.md"
+printf '{"cwd":"%s"}' "$demo" | bash hooks/session-start.sh
+```
+
+Expected: one JSON line whose `additionalContext` starts with
+`[epic-tree] active epic: demo @ …` followed by the charter and state. Starting a
+real Claude Code session with that dir as cwd injects the same context automatically.
+For the full lifecycle (scaffold → work → handoff), use the three skills on a real
+plan; templates live in `templates/`.
+
 ## Override
 
 `EPIC_TREE_ROOT=<dir>` forces the epic root (must contain `epics/ACTIVE`, or the
