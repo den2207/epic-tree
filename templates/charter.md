@@ -13,7 +13,7 @@ contract: written once by `epic-new` (later edits only by explicit human decisio
 ## Roles
 
 <!-- Single-writer rule lives here. Exactly one coordinator. -->
-| role | surface (provider) | model id | reasoning effort | writes (inside .claude/epics/) |
+| role | surface (provider) | model id | reasoning effort | writes (inside epics/) |
 |---|---|---|---|---|
 | coordinator | <e.g. Claude Code> | <exact id, e.g. claude-opus-5> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |
 | executor | <e.g. Codex MCP / Claude Code agent / Cursor> | <exact id, e.g. gpt-5.6-luna / claude-sonnet-5> | <e.g. xhigh / medium> | own journal file ONLY |
@@ -27,7 +27,7 @@ the "writes" column scopes only the epic-control files.
 An executor that does not run the Claude Code hook/skills must, before working:
 read this charter (Non-negotiables are binding verbatim) → read state.md and the
 active slice row in plan.md → create its own journal file (see AGENTS.md at the epic
-root) → inside `.claude/epics/` write nothing else; keep working until the slice's
+root) → inside `epics/` write nothing else; keep working until the slice's
 verify command passes or a named gate/blocker stops you. The process launching an
 executor embeds Non-negotiables in its prompt regardless of tool.
 

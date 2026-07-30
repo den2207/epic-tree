@@ -26,7 +26,7 @@ every new session automatically — the handoff prompt as a genre disappears.
 ## Anatomy of an epic
 
 ```
-<root>/.claude/epics/
+<root>/epics/
   ACTIVE                    # first line: slug; then one repo name per line
   <slug>/
     charter.md              # non-negotiables, roles (agent/model/effort), repo topology
@@ -42,6 +42,12 @@ dir containing several repos. The hook resolves it from any cwd: linked git work
 map back to their main checkout, then a walk-up finds the nearest `ACTIVE`
 (never considering `$HOME` itself). Sessions in repos the epic doesn't list are left
 untouched.
+
+`epics/` is deliberately visible and vendor-neutral — not a `.claude/` or tool-named
+dot-dir. These files are project content that humans and every agent read each
+session, so they follow the visible-content convention of Spec Kit's `specs/` and
+Cline's `memory-bank/` rather than the hidden tool-internals pattern. Epics created
+under the legacy `.claude/epics/` path keep working — the hook falls back to it.
 
 ## Skills
 

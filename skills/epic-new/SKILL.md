@@ -1,6 +1,6 @@
 ---
 name: epic-new
-description: Scaffold a new epic directory (.claude/epics/<slug>/) from an approved plan — charter, plan with slice table, state, ledger, gated-actions — and activate it. Use when the user approves a plan for a large multi-session task and says to set it up as an epic, start an epic, or convert a plan into an epic.
+description: Scaffold a new epic directory (epics/<slug>/) from an approved plan — charter, plan with slice table, state, ledger, gated-actions — and activate it. Use when the user approves a plan for a large multi-session task and says to set it up as an epic, start an epic, or convert a plan into an epic.
 ---
 
 # epic-new
@@ -13,10 +13,10 @@ epic-start/epic-handoff skills operate on. Templates live in this repo's `templa
 1. **Resolve the epic root**: the directory that spans every repo the epic touches —
    usually the group dir (e.g. `~/Work/<group>/`), or the repo itself for single-repo
    epics. If ambiguous, ask the user (one question, concrete options).
-2. **Guard (self-check, not a mechanism):** if `<root>/.claude/epics/ACTIVE` already
+2. **Guard (self-check, not a mechanism):** if `<root>/epics/ACTIVE` already
    exists, STOP and ask — switching epics must be an explicit user decision. Never
    silently overwrite ACTIVE.
-3. Create `<root>/.claude/epics/<slug>/` and fill from templates:
+3. Create `<root>/epics/<slug>/` and fill from templates:
    - `charter.md` — Non-negotiables, roles table (agent/model/effort per role —
      MANDATORY, do not finish without it), repo topology (repo/path/branch/worktree),
      autonomy contract. Only epic deltas; global rules stay global.
@@ -31,7 +31,7 @@ epic-start/epic-handoff skills operate on. Templates live in this repo's `templa
    If `<root>/AGENTS.md` already exists: replace the content between the
    `BEGIN/END epic-harness adapter` markers if present, otherwise append the whole
    marked block at the end. Never modify text outside the markers.
-5. **Activate**: write `<root>/.claude/epics/ACTIVE` — first line the slug, then one
+5. **Activate**: write `<root>/epics/ACTIVE` — first line the slug, then one
    repo name per line (must match charter topology). For migrations of already-running
    work, let the user review the directory and write ACTIVE themselves.
 6. Confirm: print the tree, the active slice, and the roles table.

@@ -106,6 +106,22 @@ convention already covers this niche. None does — but three findings shaped ch
   tool pins models in its own config (Codex `config.toml`, Claude Code
   `settings.json`). The charter roles table stays the single declaration; the launch
   command of each surface remains the enforcement point.
+- **Epic dir renamed `.claude/epics/` → `epics/`** (2026-07, follow-up sweep on
+  directory conventions). A vendor dot-dir contradicted the cross-agent story. No
+  neutral standard exists to join: `.agents/` is five mutually incompatible drafts
+  fighting over one name ([agents.md issue #9](https://github.com/agentsmd/agents.md/issues/9),
+  [dotagents](https://github.com/bgreenwell/dotagents),
+  [agentsfolder/spec](https://github.com/agentsfolder/spec), …) — nothing ratified by
+  the AAIF, which governs only the root file. The closest analogues split hidden
+  tool-internals from visible content ([Spec Kit `.specify/` + `specs/`, settled in
+  issue #38](https://github.com/github/spec-kit/issues/38);
+  [Cline's visible `memory-bank/`](https://docs.cline.bot/best-practices/memory-bank)).
+  Epic files are content read every session by humans and agents — and some agents'
+  file-globbing skips dotfiles — so the visible, content-named `epics/` wins over
+  `.epics/` and over a tool-named dot-dir. The hook keeps a legacy fallback to
+  `.claude/epics/`. Collision note: the *tool name* epic-harness clashes with the
+  unrelated [epicsagas/epic-harness](https://github.com/epicsagas/epic-harness)
+  (multi-tool agent harness, active) — revisit the project name before publishing.
 
 Independent validation, no changes needed:
 [Cline Memory Bank](https://docs.cline.bot/best-practices/memory-bank) converged on

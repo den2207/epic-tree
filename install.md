@@ -50,5 +50,5 @@ charter, and state should appear in the session context.
 
 ## Override
 
-`EPIC_HARNESS_ROOT=<dir>` forces the epic root (must contain `.claude/epics/ACTIVE`),
-bypassing worktree mapping and the walk-up.
+`EPIC_HARNESS_ROOT=<dir>` forces the epic root (must contain `epics/ACTIVE`, or the
+legacy `.claude/epics/ACTIVE`), bypassing worktree mapping and the walk-up.

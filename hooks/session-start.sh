@@ -18,6 +18,14 @@ emit() {
 print(json.dumps({"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":sys.stdin.read()}}))'
 }
 
+# Canonical epics dir is <root>/epics/; <root>/.claude/epics/ is the pre-rename
+# legacy location, still honored so existing epics keep working.
+epics_base() {
+  if [ -f "$1/epics/ACTIVE" ]; then printf '%s/epics' "$1"
+  elif [ -f "$1/.claude/epics/ACTIVE" ]; then printf '%s/.claude/epics' "$1"
+  fi
+}
+
 # Worktree-aware start point: map a linked worktree back to its main checkout.
 start=$cwd
 common=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
@@ -25,25 +33,28 @@ common=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir 2>/dev/
 
 # Nearest ACTIVE wins; never consider $HOME itself or /.
 root=""
+base=""
 if [ -n "${EPIC_HARNESS_ROOT:-}" ]; then
-  if [ -f "$EPIC_HARNESS_ROOT/.claude/epics/ACTIVE" ]; then
+  base=$(epics_base "$EPIC_HARNESS_ROOT")
+  if [ -n "$base" ]; then
     root=$EPIC_HARNESS_ROOT
   else
-    emit "epic-harness: EPIC_HARNESS_ROOT=$EPIC_HARNESS_ROOT has no .claude/epics/ACTIVE — unset or fix it."
+    emit "epic-harness: EPIC_HARNESS_ROOT=$EPIC_HARNESS_ROOT has no epics/ACTIVE (nor legacy .claude/epics/ACTIVE) — unset or fix it."
     exit 0
   fi
 else
   d=$start
   while [ "$d" != "$HOME" ] && [ "$d" != "/" ]; do
-    if [ -f "$d/.claude/epics/ACTIVE" ]; then root=$d; break; fi
+    base=$(epics_base "$d")
+    if [ -n "$base" ]; then root=$d; break; fi
     d=$(dirname "$d")
   done
 fi
 [ -n "$root" ] || exit 0
 
-active="$root/.claude/epics/ACTIVE"
+active="$base/ACTIVE"
 slug=$(head -n1 "$active" | tr -d '[:space:]')
-if [ -z "$slug" ] || [ ! -d "$root/.claude/epics/$slug" ]; then
+if [ -z "$slug" ] || [ ! -d "$base/$slug" ]; then
   emit "epic-harness: broken ACTIVE at $active (epic dir for '$slug' not found) — fix or remove it."
   exit 0
 fi
@@ -58,7 +69,7 @@ if [ "$start" != "$root" ]; then
   fi
 fi
 
-epic_dir="$root/.claude/epics/$slug"
+epic_dir="$base/$slug"
 charter=""; state=""; lindex=""
 [ -f "$epic_dir/charter.md" ] && charter=$(cat "$epic_dir/charter.md")
 [ -f "$epic_dir/state.md" ] && state=$(cat "$epic_dir/state.md")
