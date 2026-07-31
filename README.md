@@ -2,28 +2,58 @@
 
 Long-running AI work, rooted: charter, state, and evidence that survive every
 session, agent, and compaction. Built for Claude Code (hook + skills), readable
-by any agent via AGENTS.md.
+by any agent via [AGENTS.md](https://agents.md).
 
 ## The problem
 
 A big epic spans many chat sessions. Task trackers remember *what's left*, but every
 new session still loses the **operational context**: which model runs which role,
 permission boundaries, agreed approaches, known traps, and where the work actually
-stands. The usual workaround — an ever-growing plan file plus a hand-written handoff
-prompt per session — degrades fast: stale kickoffs, re-discovered blockers,
-re-argued rules.
+stands.
 
-## The idea
+### Before
 
-Split epic context into two physically separate classes:
+Every handoff is hand-written, and every session re-learns the epic from scratch:
+
+```mermaid
+flowchart LR
+    S1["session 1"] -- "hand-written<br/>handoff prompt" --> S2["session 2"]
+    S2 -- "stale kickoff" --> S3["session 3"]
+    S3 -- "…" --> SN["session N"]
+    P["ever-growing plan file"] -.-> S1 & S2 & S3
+    S2 -.- X1(["rules re-argued"])
+    S3 -.- X2(["blocker re-discovered"])
+    SN -.- X3(["evidence lost"])
+    style X1 fill:none,stroke:#d66,stroke-dasharray:3
+    style X2 fill:none,stroke:#d66,stroke-dasharray:3
+    style X3 fill:none,stroke:#d66,stroke-dasharray:3
+```
+
+### After
+
+The epic lives in files with fixed roles; a `SessionStart` hook injects them into
+every new session automatically — the handoff prompt as a genre disappears:
+
+```mermaid
+flowchart LR
+    subgraph epic ["&lt;root&gt;/epics/&lt;slug&gt;/"]
+        C["charter.md<br/>rules · roles · topology"]
+        ST["state.md<br/>where we are"]
+        L["ledger.md<br/>known facts L-NN"]
+        J["journal/<br/>one file per session"]
+    end
+    C & ST & L == "auto-injected<br/>at start" ==> S["any new session"]
+    S -- "epic-handoff:<br/>rewrite LAST" --> ST
+    S -- "append evidence" --> L & J
+```
+
+Two physically separate context classes make this safe:
 
 | class | files | lifecycle |
 |---|---|---|
 | stable operational layer | `charter.md`, `ledger.md` | written once / append-only; auto-injected every session |
 | live state | `state.md` (overwrite-only), `journal/` (append-only per session) | rewritten at each handoff by a single writer |
 
-A `SessionStart` hook injects the active epic's charter, state, and ledger index into
-every new session automatically — the handoff prompt as a genre disappears.
 Sessions at the epic root get the full context; sessions inside a member repo get a
 one-line banner only (most of them are unrelated to the epic — the banner costs ~50
 tokens instead of ~2.5k), and `epic-start` reads the full files when the session
@@ -56,6 +86,30 @@ session, so they follow the visible-content convention of Spec Kit's `specs/` an
 Cline's `memory-bank/` rather than the hidden tool-internals pattern. Epics created
 under the legacy `.claude/epics/` path keep working — the hook falls back to it.
 
+## Session lifecycle
+
+```mermaid
+flowchart TD
+    A["epic-new<br/>scaffold from an approved plan"] --> B["ACTIVE written — epic is live"]
+    B --> C["session starts anywhere under &lt;root&gt;"]
+    C --> D["hook injects charter + state + ledger index"]
+    D --> E["epic-start<br/>reconcile state vs git reality"]
+    E --> F["work the active slice<br/>evidence into journal"]
+    F --> G["epic-handoff<br/>journal → ledger → gates → statuses → state.md LAST"]
+    G --> C
+    G -- "all slices done<br/>with evidence" --> H["epic closed:<br/>ACTIVE deleted, stubs cleaned"]
+```
+
+- **epic-new** — scaffold an epic from an approved plan; refuses to finish without a
+  verify command per slice and a roles/model table.
+- **epic-start** — session kickoff: reconcile injected state against `git` reality
+  across ALL topology repos, detect dead sessions (commits without journal entries),
+  confirm role and nearest stop-gate.
+- **epic-handoff** — session close: journal first, ledger/gates/statuses next
+  (coordinator only), `state.md` rewritten LAST as the crash-safe commit marker,
+  including a concrete `kickoff:` line the human pastes to open the next session —
+  it names the slug and next step, so chat titles stop being generic.
+
 ## Multiple epics
 
 One `ACTIVE` — one active epic per root; the hook injects exactly one context per
@@ -84,18 +138,6 @@ silently hide a group epic.
 Two epics sharing the same repo at the same level are deliberately unsupported: one
 session gets one charter (the 9k injection budget) and one single-writer state.
 
-## Skills
-
-- **epic-new** — scaffold an epic from an approved plan; refuses to finish without a
-  verify command per slice and a roles/model table.
-- **epic-start** — session kickoff: reconcile injected state against `git` reality
-  across ALL topology repos, detect dead sessions (commits without journal entries),
-  confirm role and nearest stop-gate.
-- **epic-handoff** — session close: journal first, ledger/gates/statuses next
-  (coordinator only), `state.md` rewritten LAST as the crash-safe commit marker,
-  including a concrete `kickoff:` line the human pastes to open the next session —
-  it names the slug and next step, so chat titles stop being generic.
-
 ## Design rules that earn their keep
 
 - **Single writer**: only the coordinator rewrites `state.md`; executors write their
@@ -119,16 +161,27 @@ session gets one charter (the 9k injection budget) and one single-writer state.
   `.git/info/exclude`), pointing one level up. Orchestrators additionally embed
   the Non-negotiables block in every executor prompt regardless of tool.
 
-## Roadmap
+## Testing
 
-A local MCP server exposing `get_active_slice` / `record_evidence` / `next_gate`
-would turn the write discipline from prose rules into code-enforced tools for any
-MCP-capable agent — see the ecosystem sweep in [docs/design.md](docs/design.md).
+```bash
+bash tests/smoke.sh
+```
+
+Nine hermetic scenarios (temp-dir fixtures, no setup): full injection at the epic
+root, member-repo banner, membership gate, CRLF `ACTIVE`, slug traversal guard,
+UTF-8-safe truncation of an oversized charter, nested-epic shadowing, and the
+`EPIC_TREE_ROOT` override. Run it after any change to `hooks/session-start.sh`.
 
 ## Install
 
 See [install.md](install.md). Rationale and the review that shaped the design:
 [docs/design.md](docs/design.md).
+
+## Roadmap
+
+A local MCP server exposing `get_active_slice` / `record_evidence` / `next_gate`
+would turn the write discipline from prose rules into code-enforced tools for any
+MCP-capable agent — see the ecosystem sweep in [docs/design.md](docs/design.md).
 
 ## License
 

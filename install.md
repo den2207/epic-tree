@@ -81,7 +81,7 @@ Expected: one JSON line whose `additionalContext` starts with
 `[epic-tree] active epic: demo @ …` followed by the charter and state. Starting a
 real Claude Code session with that dir as cwd injects the same context automatically.
 For the full lifecycle (scaffold → work → handoff), use the three skills on a real
-plan; templates live in `templates/`.
+plan; templates live in `templates/`. The full scenario matrix: `bash tests/smoke.sh`.
 
 ## Override
 
