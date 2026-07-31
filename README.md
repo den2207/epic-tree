@@ -16,6 +16,7 @@ stands.
 Every handoff is hand-written, and every session re-learns the epic from scratch:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 36}}}%%
 flowchart LR
     S1["session 1"] -- "hand-written<br/>handoff prompt" --> S2["session 2"]
     S2 -- "stale kickoff" --> S3["session 3"]
@@ -35,15 +36,14 @@ The epic lives in files with fixed roles; a `SessionStart` hook injects them int
 every new session automatically — the handoff prompt as a genre disappears:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 36}}}%%
 flowchart TD
     subgraph epic ["epics/&lt;slug&gt;/"]
-        C["charter.md — rules, roles"]
-        ST["state.md — where we are"]
-        L["ledger.md — known facts"]
-        J["journal/ — session log"]
+        C["charter.md — rules, roles"] ~~~ ST["state.md — where we are"]
+        ST ~~~ L["ledger.md — known facts"] ~~~ J["journal/ — session log"]
     end
-    epic -- "auto-injected<br/>at session start" --> S(["new session"])
-    S -- "epic-handoff:<br/>journal + state.md rewrite" --> epic
+    epic -- "auto-injected at session start" --> S(["new session"])
+    S -- "epic-handoff: journal + state.md rewrite" --> epic
 ```
 
 Two physically separate context classes make this safe:
@@ -88,6 +88,7 @@ under the legacy `.claude/epics/` path keep working — the hook falls back to i
 ## Session lifecycle
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 36}}}%%
 flowchart TD
     A["epic-new<br/>scaffold from an approved plan"] --> B["ACTIVE written — epic is live"]
     B --> C["session starts anywhere under &lt;root&gt;"]
