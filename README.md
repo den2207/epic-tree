@@ -24,6 +24,10 @@ Split epic context into two physically separate classes:
 
 A `SessionStart` hook injects the active epic's charter, state, and ledger index into
 every new session automatically — the handoff prompt as a genre disappears.
+Sessions at the epic root get the full context; sessions inside a member repo get a
+one-line banner only (most of them are unrelated to the epic — the banner costs ~50
+tokens instead of ~2.5k), and `epic-start` reads the full files when the session
+actually works on the epic.
 
 ## Anatomy of an epic
 

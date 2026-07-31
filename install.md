@@ -87,5 +87,6 @@ plan; templates live in `templates/`.
 
 `EPIC_TREE_ROOT=<dir>` forces the epic root (must contain `epics/ACTIVE`, or the
 legacy `.claude/epics/ACTIVE`), bypassing worktree mapping, the walk-up, AND the
-membership gate — the forced epic's context is injected regardless of which repo
-the session is in.
+membership gate — the forced epic's FULL context is injected regardless of which repo
+the session is in. Without the override, sessions inside a member repo get a one-line
+banner instead of the full context; `epic-start` loads the files when needed.

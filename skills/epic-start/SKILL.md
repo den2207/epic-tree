@@ -5,8 +5,10 @@ description: Session kickoff for an active epic — reconcile injected charter/s
 
 # epic-start
 
-The SessionStart hook already injected `charter.md`, `state.md`, and the ledger index.
-Do NOT re-read them unless the hook reported truncation. Do NOT read plan.md fully —
+The SessionStart hook already injected `charter.md`, `state.md`, and the ledger index —
+unless it reported "banner only" (member-repo session): then read charter.md, state.md,
+and the `| L-NN` ledger index lines from the epic dir yourself FIRST. Do NOT re-read
+injected files unless the hook reported truncation. Do NOT read plan.md fully —
 only the active slice's row and section. Do NOT read all journal files.
 
 ## Steps

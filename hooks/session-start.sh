@@ -68,6 +68,7 @@ fi
 
 # Membership gate: a session inside a repo the epic does not list stays untouched.
 # Skipped when the root was forced via EPIC_TREE_ROOT.
+member=""
 if [ -z "$forced" ] && [ "$start" != "$root" ]; then
   rel=${start#"$root"/}
   repo=${rel%%/*}
@@ -75,6 +76,7 @@ if [ -z "$forced" ] && [ "$start" != "$root" ]; then
   if [ -n "$repos" ] && ! printf '%s\n' "$repos" | grep -qx "$repo"; then
     exit 0
   fi
+  member=$repo
 fi
 
 epic_dir="$base/$slug"
@@ -93,6 +95,13 @@ if [ -z "$forced" ]; then
     fi
     d=$(dirname "$d")
   done
+fi
+
+# Member-repo sessions get a one-line banner instead of the full context: most of
+# them are not epic work, and epic-start reads charter/state itself when they are.
+if [ -n "$member" ]; then
+  emit "[epic-tree] active epic: $slug @ $epic_dir (member repo: $member — banner only, full context NOT injected).$shadow If this session works on the epic, run the epic-start skill and read charter.md + state.md from $epic_dir first. Otherwise ignore this notice."
+  exit 0
 fi
 
 charter=""; state=""; lindex=""
