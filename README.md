@@ -51,6 +51,20 @@ session, so they follow the visible-content convention of Spec Kit's `specs/` an
 Cline's `memory-bank/` rather than the hidden tool-internals pattern. Epics created
 under the legacy `.claude/epics/` path keep working — the hook falls back to it.
 
+## Multiple epics
+
+One `ACTIVE` — one active epic per root; the hook injects exactly one context per
+session. Ways to run several epics concurrently:
+
+- **Different groups** — fully independent; each root has its own `epics/ACTIVE`.
+- **Group + repo** — the nearest `ACTIVE` wins on the walk-up, so a repo-scoped epic
+  (`<repo>/epics/ACTIVE`) can run inside a group that has its own group-level epic:
+  sessions in that repo get the repo epic, the rest of the group gets the group epic.
+- **Per-terminal override** — `EPIC_TREE_ROOT=<dir>` forces a specific root.
+
+Two epics sharing the same repo at the same level are deliberately unsupported: one
+session gets one charter (the 9k injection budget) and one single-writer state.
+
 ## Skills
 
 - **epic-new** — scaffold an epic from an approved plan; refuses to finish without a
@@ -59,7 +73,9 @@ under the legacy `.claude/epics/` path keep working — the hook falls back to i
   across ALL topology repos, detect dead sessions (commits without journal entries),
   confirm role and nearest stop-gate.
 - **epic-handoff** — session close: journal first, ledger/gates/statuses next
-  (coordinator only), `state.md` rewritten LAST as the crash-safe commit marker.
+  (coordinator only), `state.md` rewritten LAST as the crash-safe commit marker,
+  including a concrete `kickoff:` line the human pastes to open the next session —
+  it names the slug and next step, so chat titles stop being generic.
 
 ## Design rules that earn their keep
 

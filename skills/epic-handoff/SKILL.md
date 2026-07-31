@@ -29,6 +29,11 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
 7. **Rewrite state.md** (the commit marker, LAST write): active slice, per-repo git
    state verified against `git log`/`status` (never from memory), next step,
    blocked-on, relevant L-IDs, `updated: <ISO ts> by coordinator`. Max 40 lines.
+   Include a `kickoff:` line — the exact phrase the human pastes as the FIRST message
+   of the next session. It must name the slug and the concrete next step
+   (`epic payments: G3 R2 — deploy after key rotation`), never a generic "continue the
+   epic": chat titles are auto-generated from the first message, and a generic
+   kickoff makes every session in the list look identical.
 8. **Epic finished?** All slices done with evidence → delete `ACTIVE`, remove the
    epic-tree marked block from `<root>/AGENTS.md` (only the block — text outside
    the markers stays; delete the file if the block was its entire content), write a

@@ -3,6 +3,7 @@
 contract: rewritten (never appended) by the COORDINATOR only, as the LAST step of epic-handoff / read by every session at start (auto-injected) / max 40 lines; history lives in journal/, not here
 
 updated: <ISO-8601 timestamp> by <role>
+kickoff: <slug>: <concrete next step, a few words — pasted as the next session's first message; it becomes that chat's title>
 
 ## Active slice
 
