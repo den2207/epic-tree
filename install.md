@@ -1,6 +1,17 @@
 # Install
 
-Manual install (symlinks), until this ships as a Claude Code plugin.
+One command (clone anywhere you like, then run the installer):
+
+```bash
+git clone https://github.com/den2207/epic-tree.git ~/epic-tree && ~/epic-tree/install.sh
+```
+
+`install.sh` is idempotent: it symlinks the three skills into `~/.claude/skills`,
+registers the SessionStart hook in `~/.claude/settings.json` (updates the path on
+re-run, never duplicates), and runs the full smoke suite. Restart Claude Code
+sessions afterwards. Requirements: `bash`, `git` ≥ 2.31, `python3`.
+
+Everything below is the manual equivalent — for reference or unusual setups.
 
 ## 1. Skills
 

@@ -174,8 +174,13 @@ UTF-8-safe truncation of an oversized charter, nested-epic shadowing, and the
 
 ## Install
 
-See [install.md](install.md). Rationale and the review that shaped the design:
-[docs/design.md](docs/design.md).
+```bash
+git clone https://github.com/den2207/epic-tree.git ~/epic-tree && ~/epic-tree/install.sh
+```
+
+Idempotent: links the skills, registers the hook, runs the smoke suite. Details and
+the manual path: [install.md](install.md). Rationale and the review that shaped the
+design: [docs/design.md](docs/design.md).
 
 ## Roadmap
 
