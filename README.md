@@ -60,7 +60,21 @@ session. Ways to run several epics concurrently:
 - **Group + repo** — the nearest `ACTIVE` wins on the walk-up, so a repo-scoped epic
   (`<repo>/epics/ACTIVE`) can run inside a group that has its own group-level epic:
   sessions in that repo get the repo epic, the rest of the group gets the group epic.
-- **Per-terminal override** — `EPIC_TREE_ROOT=<dir>` forces a specific root.
+- **Per-terminal override** — `EPIC_TREE_ROOT=<dir>` forces a specific root (and
+  skips the membership gate).
+
+```
+<group>/
+  epics/ACTIVE          # "payments" — group-wide epic
+  repo-a/               # listed in ACTIVE → sessions here get payments
+  repo-b/
+    epics/ACTIVE        # "icons" — repo-scoped epic; wins here (nearest ACTIVE)
+```
+
+Visibility: `bin/epic-list.sh [root…]` prints every epic below a root with its
+active step and flags shadowing; the session banner of a nested epic carries a
+`shadows epic '<slug>' @ <root>` note, so a forgotten repo-level `ACTIVE` cannot
+silently hide a group epic.
 
 Two epics sharing the same repo at the same level are deliberately unsupported: one
 session gets one charter (the 9k injection budget) and one single-writer state.

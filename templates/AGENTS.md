@@ -12,8 +12,10 @@ An epic is active in this workspace. Before doing ANY work here:
 3. Read `epics/<slug>/state.md` (where the work stands) and the row of the
    active slice in `plan.md`. Do not read the whole plan or all journals.
 4. Create YOUR journal file before changing anything: `epics/<slug>/journal/
-   <YYYY-MM-DD>-<HHMM>-<role>[-<unique-token>].md` (copy the section structure of any
-   existing entry; add a token if the name exists — never reuse a file). Exception:
+   <YYYY-MM-DD>-<HHMM>-<role>-<unique-token>.md` — the token is mandatory (e.g. 4
+   random hex chars): two same-role sessions starting the same minute must never
+   race for one filename. Copy the section structure of any existing entry;
+   never reuse a file. Exception:
    for an explicitly read-only review task, create and modify nothing, and state in
    your report that journaling was intentionally skipped.
 5. Write scope — the restriction below applies INSIDE `epics/` only; editing

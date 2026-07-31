@@ -12,7 +12,8 @@ contract: written once by `epic-new` (later edits only by explicit human decisio
 
 ## Roles
 
-<!-- Single-writer rule lives here. Exactly one coordinator. -->
+<!-- Single-writer rule lives here. Exactly one coordinator.
+     Solo use is valid: keep a single coordinator row and delete the executor row. -->
 | role | surface (provider) | model id | reasoning effort | writes (inside epics/) |
 |---|---|---|---|---|
 | coordinator | <e.g. Claude Code> | <exact id, e.g. claude-opus-5> | <e.g. high> | state.md, ledger.md, gated-actions.md, plan.md statuses, own journal file |

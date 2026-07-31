@@ -5,6 +5,7 @@ Manual install (symlinks), until this ships as a Claude Code plugin.
 ## 1. Skills
 
 ```bash
+mkdir -p ~/.claude/skills
 for s in epic-new epic-start epic-handoff; do
   ln -sfn "$(pwd)/skills/$s" ~/.claude/skills/$s
 done
@@ -32,8 +33,23 @@ Add to the `hooks` object in `~/.claude/settings.json` (path adjusted to your cl
 ]
 ```
 
-The hook is silent (no output, exit 0) unless a session starts inside an epic root —
-so it is safe to keep enabled globally.
+Or merge it automatically (run from the clone root; appends without touching your
+other settings):
+
+```bash
+python3 -c "
+import json, os, pathlib
+p = pathlib.Path.home()/'.claude'/'settings.json'
+s = json.loads(p.read_text()) if p.exists() else {}
+h = {'type':'command','command':'bash '+os.getcwd()+'/hooks/session-start.sh','timeout':15,'statusMessage':'epic-tree'}
+s.setdefault('hooks',{}).setdefault('SessionStart',[]).append({'hooks':[h]})
+p.write_text(json.dumps(s, indent=2))
+"
+```
+
+The hook is silent (no output, exit 0) unless a session starts inside an epic root
+or a misconfiguration needs surfacing (bad `EPIC_TREE_ROOT`, broken `ACTIVE`,
+incomplete scaffold) — safe to keep enabled globally.
 
 Requirements: `bash`, `git` ≥ 2.31, `python3` (used for JSON in/out; the hook exits
 silently if missing).
@@ -70,4 +86,6 @@ plan; templates live in `templates/`.
 ## Override
 
 `EPIC_TREE_ROOT=<dir>` forces the epic root (must contain `epics/ACTIVE`, or the
-legacy `.claude/epics/ACTIVE`), bypassing worktree mapping and the walk-up.
+legacy `.claude/epics/ACTIVE`), bypassing worktree mapping, the walk-up, AND the
+membership gate — the forced epic's context is injected regardless of which repo
+the session is in.

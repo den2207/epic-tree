@@ -52,6 +52,11 @@ Linked worktrees live outside the group tree; a naive cwd walk-up never finds th
 epic. The common-dir (always absolute via `--path-format`) points into the main
 checkout's `.git`; its dirname is the main checkout. Empirically verified — the
 common-dir output is otherwise relative and inconsistent with plain `rev-parse`.
+Note the remap runs for ANY git cwd, not only worktrees: it collapses the start
+point to the repo's top level before the walk-up, which is what makes sessions in
+repo subdirectories resolve to the repo's own epic. Known blind spot, accepted:
+inside a git submodule the common-dir points into `<super>/.git/modules/`, so the
+membership gate misfires — none of the target repos use submodules.
 
 **state.md written LAST at handoff.** The handoff order is journal → ledger/gates →
 statuses → state. A crash mid-handoff leaves state pointing at the previous
