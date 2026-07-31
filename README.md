@@ -35,9 +35,8 @@ The epic lives in files with fixed roles; a `SessionStart` hook injects them int
 every new session automatically — the handoff prompt as a genre disappears:
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph epic ["epics/&lt;slug&gt;/"]
-        direction TB
         C["charter.md — rules, roles"]
         ST["state.md — where we are"]
         L["ledger.md — known facts"]
