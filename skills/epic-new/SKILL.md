@@ -31,6 +31,14 @@ epic-start/epic-handoff skills operate on. Templates live in this repo's `templa
    If `<root>/AGENTS.md` already exists: replace the content between the
    `BEGIN/END epic-tree adapter` markers if present, otherwise append the whole
    marked block at the end. Never modify text outside the markers.
+   Then bridge the discovery gap (Codex/Copilot never read AGENTS.md above a repo's
+   own git root, and a group root is usually not a git repo) — for EACH member repo:
+   - no tracked `AGENTS.md` there → write `templates/AGENTS-stub.md` (adjust the
+     slug) as `<repo>/AGENTS.md` and append `AGENTS.md` to `<repo>/.git/info/exclude`
+     so the work repo stays clean for git;
+   - a tracked `AGENTS.md` already exists → do NOT touch it; report to the user that
+     this repo's own file governs and committing the epic block there is their
+     explicit, team-visible decision.
 5. **Activate**: write `<root>/epics/ACTIVE` — first line the slug, then one
    repo name per line (must match charter topology). For migrations of already-running
    work, let the user review the directory and write ACTIVE themselves.

@@ -36,7 +36,9 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
    kickoff makes every session in the list look identical.
 8. **Epic finished?** All slices done with evidence → delete `ACTIVE`, remove the
    epic-tree marked block from `<root>/AGENTS.md` (only the block — text outside
-   the markers stays; delete the file if the block was its entire content), write a
+   the markers stays; delete the file if the block was its entire content), delete
+   the untracked AGENTS.md stubs from member repos (only files that carry the
+   epic-tree stub marker) and their `.git/info/exclude` lines, write a
    final journal entry, and tell the user the epic is closed and archivable.
 
 ## Guardrails

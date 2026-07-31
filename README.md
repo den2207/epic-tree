@@ -108,8 +108,11 @@ session gets one charter (the 9k injection budget) and one single-writer state.
   active slice, create your own journal file, respect the write discipline of your
   role. The generated content sits inside `BEGIN/END epic-tree adapter` markers,
   so regeneration replaces only its own block and hand-written AGENTS.md content
-  survives. Orchestrators additionally embed the Non-negotiables block in every
-  executor prompt regardless of tool.
+  survives. Because those tools stop AGENTS.md discovery at a repo's own git root
+  (and a group root is usually not a git repo), `epic-new` also drops an untracked
+  stub `AGENTS.md` into each member repo that has none (kept out of git via
+  `.git/info/exclude`), pointing one level up. Orchestrators additionally embed
+  the Non-negotiables block in every executor prompt regardless of tool.
 
 ## Roadmap
 
