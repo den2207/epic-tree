@@ -1,6 +1,6 @@
 ---
 name: epic-handoff
-description: Close an epic session — finalize the journal entry, promote stable facts to the ledger, update slice statuses with evidence, and (coordinator only) rewrite state.md last as the commit marker. Use at context thresholds, session end, when the user says to hand off / continue in a new chat, or when an epic slice batch is done.
+description: Close an epic session — finalize the journal, promote facts to the ledger, update slice statuses with evidence, rewrite state.md last (coordinator). Use at context thresholds, session end, "hand off / continue in a new chat", or a finished slice batch.
 ---
 
 # epic-handoff

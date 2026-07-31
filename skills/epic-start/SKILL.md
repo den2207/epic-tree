@@ -1,6 +1,6 @@
 ---
 name: epic-start
-description: Session kickoff for an active epic — reconcile injected charter/state with reality (git across all topology repos), confirm role, model split, and nearest stop-gate, then continue the active slice. Use at the start of any session working on an epic, when the user says to continue the epic, or when SessionStart context shows an active epic.
+description: Epic session kickoff — reconcile charter/state with git reality across topology repos, confirm role and nearest stop-gate, continue the active slice. Use at the start of any session on an epic, or when SessionStart context shows an active epic.
 ---
 
 # epic-start

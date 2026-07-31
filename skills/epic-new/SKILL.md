@@ -1,6 +1,6 @@
 ---
 name: epic-new
-description: Scaffold a new epic directory (epics/<slug>/) from an approved plan — charter, plan with slice table, state, ledger, gated-actions — and activate it. Use when the user approves a plan for a large multi-session task and says to set it up as an epic, start an epic, or convert a plan into an epic.
+description: Scaffold and activate a new epic dir (epics/<slug>/ — charter, plan, state, ledger, gated-actions) from an approved plan. Use when the user says to set up / start an epic or convert a plan into one.
 ---
 
 # epic-new
