@@ -56,6 +56,11 @@ fi
 
 active="$base/ACTIVE"
 slug=$(head -n1 "$active" | tr -d '[:space:]')
+case $slug in
+  */*|*..*)
+    emit "epic-tree: invalid slug '$slug' in $active — must be a plain directory name."
+    exit 0;;
+esac
 if [ -z "$slug" ] || [ ! -d "$base/$slug" ]; then
   emit "epic-tree: broken ACTIVE at $active (epic dir for '$slug' not found) — fix or remove it."
   exit 0
@@ -66,13 +71,30 @@ fi
 if [ -z "$forced" ] && [ "$start" != "$root" ]; then
   rel=${start#"$root"/}
   repo=${rel%%/*}
-  repos=$(tail -n +2 "$active" | tr -d ' ')
+  repos=$(tail -n +2 "$active" | tr -d ' \r')
   if [ -n "$repos" ] && ! printf '%s\n' "$repos" | grep -qx "$repo"; then
     exit 0
   fi
 fi
 
 epic_dir="$base/$slug"
+
+# Nearest ACTIVE wins, so a nested epic silently overrides any epic above it;
+# surface that in the banner so a forgotten repo-level ACTIVE stays visible.
+shadow=""
+if [ -z "$forced" ]; then
+  d=$(dirname "$root")
+  while [ "$d" != "$HOME" ] && [ "$d" != "/" ]; do
+    sb=$(epics_base "$d")
+    if [ -n "$sb" ]; then
+      sslug=$(head -n1 "$sb/ACTIVE" | tr -d '[:space:]')
+      shadow=" NOTE: this epic shadows epic '$sslug' @ $d (nearest ACTIVE wins)."
+      break
+    fi
+    d=$(dirname "$d")
+  done
+fi
+
 charter=""; state=""; lindex=""
 [ -f "$epic_dir/charter.md" ] && charter=$(cat "$epic_dir/charter.md")
 [ -f "$epic_dir/state.md" ] && state=$(cat "$epic_dir/state.md")
@@ -82,7 +104,7 @@ if [ -z "$charter$state" ]; then
   exit 0
 fi
 
-header="[epic-tree] active epic: $slug @ $epic_dir (resolved from cwd $cwd). Follow the charter Non-negotiables; run the epic-start skill before working."
+header="[epic-tree] active epic: $slug @ $epic_dir (resolved from cwd $cwd).$shadow Follow the charter Non-negotiables; run the epic-start skill before working."
 budget=9000
 
 assemble() {
@@ -100,7 +122,11 @@ if [ ${#ctx} -gt $budget ]; then
   header="$header [TRUNCATED to fit the 9k additionalContext budget — read $epic_dir/charter.md fully before relying on it]"
   keep=$(( budget - ${#header} - ${#state} - 200 ))
   [ "$keep" -lt 0 ] && keep=0
-  charter=$(printf '%s' "$charter" | head -c "$keep")
+  # Cut on a UTF-8 character boundary: a raw byte cut mid-sequence leaks lone
+  # surrogates into the emitted JSON and crashes downstream re-encoders.
+  charter=$(printf '%s' "$charter" | python3 -c 'import sys
+n = int(sys.argv[1])
+sys.stdout.write(sys.stdin.buffer.read()[:n].decode("utf-8", "ignore"))' "$keep")
   ctx=$(assemble)
 fi
 emit "$ctx"
