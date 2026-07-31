@@ -36,15 +36,15 @@ every new session automatically — the handoff prompt as a genre disappears:
 
 ```mermaid
 flowchart LR
-    subgraph epic ["&lt;root&gt;/epics/&lt;slug&gt;/"]
-        C["charter.md<br/>rules · roles · topology"]
-        ST["state.md<br/>where we are"]
-        L["ledger.md<br/>known facts L-NN"]
-        J["journal/<br/>one file per session"]
+    subgraph epic ["epics/&lt;slug&gt;/"]
+        direction TB
+        C["charter.md — rules, roles"]
+        ST["state.md — where we are"]
+        L["ledger.md — known facts"]
+        J["journal/ — session log"]
     end
-    C & ST & L == "auto-injected<br/>at start" ==> S["any new session"]
-    S -- "epic-handoff:<br/>rewrite LAST" --> ST
-    S -- "append evidence" --> L & J
+    epic -- "auto-injected<br/>at session start" --> S(["new session"])
+    S -- "epic-handoff:<br/>journal + state.md rewrite" --> epic
 ```
 
 Two physically separate context classes make this safe:
