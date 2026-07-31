@@ -32,4 +32,6 @@ An epic is active in this workspace. Before doing ANY work here:
 
 Slice statuses flip to done only with evidence (verify-command output or commit hash).
 Human-only actions live in `gated-actions.md` (G-NN) — never execute them yourself.
+When a G-NN is not in `gated-actions.md`, look in `gated-actions.ARCHIVE.md` (closed
+blocks move there at handoff).
 <!-- END epic-tree adapter -->

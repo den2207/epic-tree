@@ -35,7 +35,8 @@ every new session automatically — the handoff prompt as a genre disappears.
     plan.md                 # slice table: S-NN | slice | verify | status | evidence
     state.md                # where we are; coordinator-only, max 40 lines
     ledger.md               # L-NN stable facts: known blockers, non-regressions, gotchas
-    gated-actions.md        # G-NN queue of human-only actions
+    gated-actions.md        # G-NN queue of human-only actions (open + this session's)
+    gated-actions.ARCHIVE.md# closed G-NN blocks, moved here at handoff
     journal/                # <date>-<HHMM>-<role>.md, one per session
 ```
 

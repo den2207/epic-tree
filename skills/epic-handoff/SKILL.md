@@ -23,7 +23,10 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
 4. **Ledger**: append new stable facts as `L-NN | fact | evidence | date`. Facts that
    outlive the epic also get a one-line pointer in the orchestrator's global memory.
 5. **Gated actions**: add new G-NN blocks (copy-paste-ready command, cwd, account,
-   expected output); mark executed ones done.
+   expected output); mark executed ones done. Then archive: append every done block
+   from BEFORE this session to `gated-actions.ARCHIVE.md` in the same epic dir
+   (keep the `## G-NN` headings verbatim so grep still finds them) and delete it
+   from the main file — it keeps only open blocks plus blocks closed this session.
 6. **plan.md statuses**: flip `status` to done ONLY with evidence (verify-command
    output or commit hash) recorded in the `evidence` column. No evidence — stays todo.
 7. **Rewrite state.md** (the commit marker, LAST write): active slice, per-repo git

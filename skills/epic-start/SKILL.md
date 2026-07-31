@@ -21,11 +21,13 @@ only the active slice's row and section. Do NOT read all journal files.
      handoff. Reconstruct what they did from the diffs before continuing.
    - `updated: ... by <role>` shows a writer other than the coordinator → flag it to
      the user; single-writer discipline was violated.
-3. **Read the last 1–2 files in `journal/`** (by name, newest first) for decisions
+3. When looking up a G-NN, check `gated-actions.md` first, then
+   `gated-actions.ARCHIVE.md` (closed blocks are moved there at handoff).
+4. **Read the last 1–2 files in `journal/`** (by name, newest first) for decisions
    and proposals that postdate state.md.
-4. **Open your journal file**: `journal/<YYYY-MM-DD>-<HHMM>-<role>.md` from
+5. **Open your journal file**: `journal/<YYYY-MM-DD>-<HHMM>-<role>.md` from
    `templates/journal-entry.md` (HHMM = now; never reuse an existing file).
-5. **Confirm in your first reply**: active slice, your role, the roles/model table
+6. **Confirm in your first reply**: active slice, your role, the roles/model table
    (one line), the nearest stop-gate (G-NN or threshold), and any red flags from step 2.
    Then start the active slice — no permission-asking beyond the charter's autonomy contract.
 
