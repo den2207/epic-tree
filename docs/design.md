@@ -154,6 +154,21 @@ v2 backlog, deliberately not built yet:
    concurrent executors across worktrees ever append to the same file.
 3. **Watch the AGENTS.md spec** for state/permission extensions; `gated-actions.md`
    is a candidate pattern to propose upstream rather than keep proprietary.
+4. **Honest multi-active resolution** — today `ACTIVE` names exactly one epic and
+   `nearest ACTIVE wins`, so two concurrently active epics can only be expressed by
+   planting a repo-level `epics/ACTIVE` plus a symlink to the shared epic dir inside
+   each member repo (and excluding `epics/` in `.git/info/exclude`). That pattern
+   works — a session in the repo gets the nested epic, the group epic stays intact
+   for every other repo, and both `session-start.sh` and `epic-list.sh` report the
+   shadowing — but it has four honest gaps: the scaffold is manual (`epic-new` does
+   not plant it); a repo can belong to only one active epic; lines 2+ of a
+   repo-level `ACTIVE` are inert, because the membership gate only fires when
+   `start != root` and the worktree mapping makes those equal inside any git repo,
+   so the repo list reads like a promise the hook never checks; and the shadowed
+   epic is named in the banner but its gates and non-negotiables are never injected,
+   so a session can be inside two live epics while seeing one. A real fix accepts a
+   set of slugs (multi-line `ACTIVE` or `ACTIVE.d/`), resolves membership per repo
+   across all of them, and splits the 9k budget over the epics that actually match.
 
 ## Review provenance
 
