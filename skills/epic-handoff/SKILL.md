@@ -43,12 +43,14 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
      done slices into `S-01..S-04`), exactly one `<- NEXT` marker, every blocked slice
      names its G-NN, and one `After:` line saying what follows the epic. It is the
      first thing the next session and the human read: done / not done / what next.
-8. **Epic finished?** All slices done with evidence → delete `ACTIVE`, remove the
+8. **Epic finished?** All slices done with evidence → write the final journal entry,
+   then `mv epics/<slug> epics/_archive/<slug>` — the epic stops being live and
+   leaves the roster. Only if NO live epic remains under the root: remove the
    epic-tree marked block from `<root>/AGENTS.md` (only the block — text outside
-   the markers stays; delete the file if the block was its entire content), delete
+   the markers stays; delete the file if the block was its entire content) and delete
    the untracked AGENTS.md stubs from member repos (only files that carry the
-   epic-tree stub marker) and their `.git/info/exclude` lines, write a
-   final journal entry, and tell the user the epic is closed and archivable. The
+   epic-tree stub marker) and their `.git/info/exclude` lines. Tell the user the
+   epic is closed. The
    final journal entry and the closing message carry the final `## Map` — every
    slice `[x]`, or `[-]` with its reason — and an `After:` line naming the
    follow-up epics and the debts that outlive this one.

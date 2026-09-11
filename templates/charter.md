@@ -34,7 +34,7 @@ executor embeds Non-negotiables in its prompt regardless of tool.
 
 ## Repo topology
 
-<!-- Every repo this epic touches. ACTIVE must list the same repo names. -->
+<!-- Every repo this epic touches — the only source of truth for membership. -->
 | repo | path | work branch | worktree |
 |---|---|---|---|
 | <name> | <absolute path> | <branch> | <absolute worktree path or —> |

@@ -42,10 +42,11 @@ Ideas deliberately borrowed:
 auto-injected every session and almost never written; the live layer is rewritten at
 every handoff by a single writer. Mixing them is what made the old plan files rot.
 
-**Group-level epic root + membership gate.** Epics span several repos, so the epic
-dir lives in the directory that spans them. The ACTIVE file lists the epic's repos;
-sessions inside a sibling repo that is NOT listed get nothing injected — one group
-can host unrelated projects safely. Nested ACTIVEs resolve nearest-first.
+**Group-level epic root, selection by message.** Epics span several repos, so the epic
+dir lives in the directory that spans them. Which epic a session is about is decided by
+the user's message naming the slug (v1 used an `ACTIVE` pointer plus a repo membership
+list — retired 2026-09-11, see v2 backlog item 4). Nested `epics/` dirs merge into the
+roster of sessions below them.
 
 **Worktree mapping via `git rev-parse --path-format=absolute --git-common-dir`.**
 Linked worktrees live outside the group tree; a naive cwd walk-up never finds the
@@ -154,21 +155,14 @@ v2 backlog, deliberately not built yet:
    concurrent executors across worktrees ever append to the same file.
 3. **Watch the AGENTS.md spec** for state/permission extensions; `gated-actions.md`
    is a candidate pattern to propose upstream rather than keep proprietary.
-4. **Honest multi-active resolution** — today `ACTIVE` names exactly one epic and
-   `nearest ACTIVE wins`, so two concurrently active epics can only be expressed by
-   planting a repo-level `epics/ACTIVE` plus a symlink to the shared epic dir inside
-   each member repo (and excluding `epics/` in `.git/info/exclude`). That pattern
-   works — a session in the repo gets the nested epic, the group epic stays intact
-   for every other repo, and both `session-start.sh` and `epic-list.sh` report the
-   shadowing — but it has four honest gaps: the scaffold is manual (`epic-new` does
-   not plant it); a repo can belong to only one active epic; lines 2+ of a
-   repo-level `ACTIVE` are inert, because the membership gate only fires when
-   `start != root` and the worktree mapping makes those equal inside any git repo,
-   so the repo list reads like a promise the hook never checks; and the shadowed
-   epic is named in the banner but its gates and non-negotiables are never injected,
-   so a session can be inside two live epics while seeing one. A real fix accepts a
-   set of slugs (multi-line `ACTIVE` or `ACTIVE.d/`), resolves membership per repo
-   across all of them, and splits the 9k budget over the epics that actually match.
+4. ~~Honest multi-active resolution~~ — **done 2026-09-11**: the `ACTIVE` pointer and
+   its membership list are gone. Live = `epics/<slug>/state.md` exists; closed = moved
+   to `_archive/`. One live epic → injected at SessionStart as before; several → a
+   roster, and the user's message selects the epic by naming its slug — a
+   `UserPromptSubmit` hook injects that epic's context (a mechanism, replacing the
+   "read the slug and run epic-start" prose that decayed in practice: 4 of 9 live epics
+   had no `kickoff:` line). Membership moved back to the charter topology, its only
+   source of truth. Nested `epics/` dirs merge into the roster instead of shadowing.
 
 ## Review provenance
 

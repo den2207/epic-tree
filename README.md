@@ -32,8 +32,8 @@ flowchart LR
 
 ### After
 
-The epic lives in files with fixed roles; a `SessionStart` hook injects them into
-every new session automatically — the handoff prompt as a genre disappears:
+The epic lives in files with fixed roles; hooks inject them into every new session
+automatically — the handoff prompt as a genre disappears:
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 36}}}%%
@@ -53,17 +53,18 @@ Two physically separate context classes make this safe:
 | stable operational layer | `charter.md`, `ledger.md` | written once / append-only; auto-injected every session |
 | live state | `state.md` (overwrite-only), `journal/` (append-only per session) | rewritten at each handoff by a single writer |
 
-Sessions at the epic root get the full context; sessions inside a member repo get a
-one-line banner only (most of them are unrelated to the epic — the banner costs ~50
-tokens instead of ~2.5k), and `epic-start` reads the full files when the session
-actually works on the epic.
+With one live epic under the cwd, every session gets its full context at start. With
+several, the session gets a roster (slug, last update, kickoff phrase — ~300 tokens),
+and the user's first message selects the epic by naming its slug: a `UserPromptSubmit`
+hook then injects that epic's full context. Selection is a mechanism, not a rule the
+model has to remember.
 
 ## Anatomy of an epic
 
 ```
 <root>/epics/
-  ACTIVE                    # first line: slug; then one repo name per line
-  <slug>/
+  _archive/<slug>/          # closed epics — moved here, no longer live
+  <slug>/                   # live epic: any dir here with a state.md
     charter.md              # non-negotiables, roles (agent/model/effort), repo topology
     plan.md                 # slice table: S-NN | slice | verify | status | evidence
     state.md                # where we are; coordinator-only, max 40 lines
@@ -74,10 +75,10 @@ actually works on the epic.
 ```
 
 `<root>` is the directory spanning every repo the epic touches — typically a group
-dir containing several repos. The hook resolves it from any cwd: linked git worktrees
-map back to their main checkout, then a walk-up finds the nearest `ACTIVE`
-(never considering `$HOME` itself). Sessions in repos the epic doesn't list are left
-untouched.
+dir containing several repos. The hooks resolve it from any cwd: linked git worktrees
+map back to their main checkout, then a walk-up collects every `epics/` dir above
+(never considering `$HOME` itself). There is no pointer file: a directory with a
+`state.md` is live, a directory under `_archive/` is closed.
 
 `epics/` is deliberately visible and vendor-neutral — not a `.claude/` or tool-named
 dot-dir. These files are project content that humans and every agent read each
@@ -90,14 +91,14 @@ under the legacy `.claude/epics/` path keep working — the hook falls back to i
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 36}}}%%
 flowchart TD
-    A["epic-new<br/>scaffold from an approved plan"] --> B["ACTIVE written — epic is live"]
+    A["epic-new<br/>scaffold from an approved plan"] --> B["state.md exists — epic is live"]
     B --> C["session starts anywhere under &lt;root&gt;"]
-    C --> D["hook injects charter + state + ledger index"]
+    C --> D["one live epic: hook injects charter + state<br/>several: roster, then the first message<br/>names the slug and the prompt hook injects it"]
     D --> E["epic-start<br/>reconcile state vs git reality"]
     E --> F["work the active slice<br/>evidence into journal"]
     F --> G["epic-handoff<br/>journal → ledger → gates → statuses → state.md LAST"]
     G --> C
-    G -- "all slices done<br/>with evidence" --> H["epic closed:<br/>ACTIVE deleted, stubs cleaned"]
+    G -- "all slices done<br/>with evidence" --> H["epic closed:<br/>dir moved to _archive/"]
 ```
 
 - **epic-new** — scaffold an epic from an approved plan; refuses to finish without a
@@ -115,31 +116,26 @@ flowchart TD
 
 ## Multiple epics
 
-One `ACTIVE` — one active epic per root; the hook injects exactly one context per
-session. Ways to run several epics concurrently:
-
-- **Different groups** — fully independent; each root has its own `epics/ACTIVE`.
-- **Group + repo** — the nearest `ACTIVE` wins on the walk-up, so a repo-scoped epic
-  (`<repo>/epics/ACTIVE`) can run inside a group that has its own group-level epic:
-  sessions in that repo get the repo epic, the rest of the group gets the group epic.
-- **Per-terminal override** — `EPIC_TREE_ROOT=<dir>` forces a specific root (and
-  skips the membership gate).
+Any number of epics can be live under one root — a group-wide one, a repo-scoped one
+and a third for a sub-group repo all sit in the same `epics/` dir and differ only in
+their charter topology. Nothing is shared between them, so parallel sessions on
+different epics never race. Per session the selection goes:
 
 ```
-<group>/
-  epics/ACTIVE          # "payments" — group-wide epic
-  repo-a/               # listed in ACTIVE → sessions here get payments
-  repo-b/
-    epics/ACTIVE        # "icons" — repo-scoped epic; wins here (nearest ACTIVE)
+epics/                          new chat, cwd anywhere under <root>
+  payments/   state.md            │ SessionStart: 3 live → roster (slug · updated · kickoff)
+  icons/      state.md            │ user pastes:  "epic icons: S-3 export pipeline"
+  onboarding/ state.md            │ UserPromptSubmit: names `icons` → inject icons' charter + state
+  _archive/legacy-cleanup/        ▼ epic-start, work, epic-handoff → state.md + kickoff for next time
 ```
 
-Visibility: `bin/epic-list.sh [root…]` prints every epic below a root with its
-active step and flags shadowing; the session banner of a nested epic carries a
-`shadows epic '<slug>' @ <root>` note, so a forgotten repo-level `ACTIVE` cannot
-silently hide a group epic.
+A message naming two slugs injects nothing and asks for one; a message naming none
+means the session is not epic work. Nested `<repo>/epics/` dirs are merged into the
+roster of sessions below them, but one `epics/` at the group root keeps the roster in
+one place. `EPIC_TREE_ROOT=<dir>` forces a specific root from any cwd.
 
-Two epics sharing the same repo at the same level are deliberately unsupported: one
-session gets one charter (the 9k injection budget) and one single-writer state.
+Visibility: `bin/epic-list.sh [root…]` prints every live epic below a root with its
+last update, kickoff phrase and active step, and flags stray v1 `ACTIVE` files.
 
 ## Design rules that earn their keep
 
@@ -170,10 +166,12 @@ session gets one charter (the 9k injection budget) and one single-writer state.
 bash tests/smoke.sh
 ```
 
-Nine hermetic scenarios (temp-dir fixtures, no setup): full injection at the epic
-root, member-repo banner, membership gate, CRLF `ACTIVE`, slug traversal guard,
-UTF-8-safe truncation of an oversized charter, nested-epic shadowing, and the
-`EPIC_TREE_ROOT` override. Run it after any change to `hooks/session-start.sh`.
+Sixteen hermetic scenarios (temp-dir fixtures, no setup): single-epic injection from
+the root and from a repo below it, `_archive/` exclusion, roster order and kickoff
+lines, prompt selection (one slug, none, several, whole-word matching), UTF-8-safe
+truncation of an oversized charter, nested `epics/` merging, stale v1 `ACTIVE`
+flagging, the `EPIC_TREE_ROOT` override, and `epic-list`. Run it after any change
+under `hooks/`.
 
 ## Install
 
@@ -181,7 +179,7 @@ UTF-8-safe truncation of an oversized charter, nested-epic shadowing, and the
 git clone https://github.com/den2207/epic-tree.git ~/epic-tree && ~/epic-tree/install.sh
 ```
 
-Idempotent: links the skills, registers the hook, runs the smoke suite. Details and
+Idempotent: links the skills, registers both hooks, runs the smoke suite. Details and
 the manual path: [install.md](install.md). Rationale and the review that shaped the
 design: [docs/design.md](docs/design.md).
 

@@ -5,10 +5,11 @@ description: Epic session kickoff — reconcile charter/state with git reality a
 
 # epic-start
 
-The SessionStart hook already injected `charter.md`, `state.md`, and the ledger index —
-unless it reported "banner only" (member-repo session): then read charter.md, state.md,
-and the `| L-NN` ledger index lines from the epic dir yourself FIRST. Do NOT re-read
-injected files unless the hook reported truncation. Do NOT read plan.md fully —
+The hooks already injected `charter.md`, `state.md`, and the ledger index — at
+SessionStart when only one epic is live under the cwd, or on the user's message that
+named the epic's slug when several are live. If you only saw the roster and the user's
+message names no slug, ask which epic (one question, the roster's slugs as options) —
+never pick one yourself. Do NOT re-read injected files unless the hook reported truncation. Do NOT read plan.md fully —
 only the active slice's row and section. Do NOT read all journal files.
 
 ## Steps

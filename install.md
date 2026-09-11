@@ -52,14 +52,15 @@ python3 -c "
 import json, os, pathlib
 p = pathlib.Path.home()/'.claude'/'settings.json'
 s = json.loads(p.read_text()) if p.exists() else {}
-h = {'type':'command','command':'bash '+os.getcwd()+'/hooks/session-start.sh','timeout':15,'statusMessage':'epic-tree'}
-s.setdefault('hooks',{}).setdefault('SessionStart',[]).append({'hooks':[h]})
+for ev, sh in (('SessionStart','session-start.sh'),('UserPromptSubmit','user-prompt-submit.sh')):
+    h = {'type':'command','command':'bash '+os.getcwd()+'/hooks/'+sh,'timeout':15,'statusMessage':'epic-tree'}
+    s.setdefault('hooks',{}).setdefault(ev,[]).append({'hooks':[h]})
 p.write_text(json.dumps(s, indent=2))
 "
 ```
 
-The hook is silent (no output, exit 0) unless a session starts inside an epic root
-or a misconfiguration needs surfacing (bad `EPIC_TREE_ROOT`, broken `ACTIVE`,
+Both hooks are silent (no output, exit 0) unless a session starts under an epic root
+or a misconfiguration needs surfacing (bad `EPIC_TREE_ROOT`, stale v1 `ACTIVE`,
 incomplete scaffold) — safe to keep enabled globally.
 
 Requirements: `bash`, `git` ≥ 2.31, `python3` (used for JSON in/out; the hook exits
@@ -71,7 +72,7 @@ silently if missing).
 printf '{"cwd":"%s"}' "$HOME" | bash hooks/session-start.sh
 ```
 
-Expected: empty output (no ACTIVE epic above `$HOME`). Then create a throwaway epic
+Expected: empty output (no `epics/` dir with a live epic above `$HOME`). Then create a throwaway epic
 dir with `epic-new` in a project and start a new session there — the epic banner,
 charter, and state should appear in the session context.
 
@@ -82,7 +83,6 @@ Fake a minimal epic and run the hook against it — takes under a minute:
 ```bash
 demo=$(mktemp -d)/group
 mkdir -p "$demo/epics/demo"
-printf 'demo\n' > "$demo/epics/ACTIVE"
 printf '# charter — demo\n\n## Non-negotiables\n- demo rule\n' > "$demo/epics/demo/charter.md"
 printf '# state — demo\n\n## Active slice\nS-01 hello\n' > "$demo/epics/demo/state.md"
 printf '{"cwd":"%s"}' "$demo" | bash hooks/session-start.sh
@@ -96,8 +96,7 @@ plan; templates live in `templates/`. The full scenario matrix: `bash tests/smok
 
 ## Override
 
-`EPIC_TREE_ROOT=<dir>` forces the epic root (must contain `epics/ACTIVE`, or the
-legacy `.claude/epics/ACTIVE`), bypassing worktree mapping, the walk-up, AND the
-membership gate — the forced epic's FULL context is injected regardless of which repo
-the session is in. Without the override, sessions inside a member repo get a one-line
-banner instead of the full context; `epic-start` loads the files when needed.
+`EPIC_TREE_ROOT=<dir>` forces the epic root (must contain `epics/`, or the legacy
+`.claude/epics/`), bypassing worktree mapping and the walk-up. With one live epic
+there its full context is injected; with several, the roster — and the user's message
+selects the epic exactly as without the override.
