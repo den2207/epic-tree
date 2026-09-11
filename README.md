@@ -107,8 +107,11 @@ flowchart TD
   confirm role and nearest stop-gate.
 - **epic-handoff** — session close: journal first, ledger/gates/statuses next
   (coordinator only), `state.md` rewritten LAST as the crash-safe commit marker,
-  including a concrete `kickoff:` line the human pastes to open the next session —
-  it names the slug and next step, so chat titles stop being generic.
+  including a `## Map` — a cheap ASCII picture of every slice (done / in progress /
+  blocked / todo) with one `<- NEXT` marker and an `After:` line — and a concrete
+  `kickoff:` phrase. The closing chat message repeats the map and ends with one
+  sentence: which directory to open the next chat in and what to paste as its first
+  message — it names the slug and next step, so chat titles stop being generic.
 
 ## Multiple epics
 
