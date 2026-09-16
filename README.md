@@ -4,6 +4,14 @@ Long-running AI work, rooted: charter, state, and evidence that survive every
 session, agent, and compaction. Built for Claude Code (hook + skills), readable
 by any agent via [AGENTS.md](https://agents.md).
 
+[![smoke](https://github.com/den2207/epic-tree/actions/workflows/smoke.yml/badge.svg)](https://github.com/den2207/epic-tree/actions/workflows/smoke.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![deps](https://img.shields.io/badge/runtime%20deps-bash%20%2B%20git-lightgrey)
+
+> On the tree it was built for: **3.49M tokens** of accumulated epic context,
+> reachable from a **~2.5k-token** session start. One epic ran **85 sessions**
+> without a single hand-written handoff prompt.
+
 ## The problem
 
 A big epic spans many chat sessions. Task trackers remember *what's left*, but every
@@ -58,6 +66,63 @@ several, the session gets a roster (slug, last update, kickoff phrase — ~300 t
 and the user's first message selects the epic by naming its slug: a `UserPromptSubmit`
 hook then injects that epic's full context. Selection is a mechanism, not a rule the
 model has to remember.
+
+## Measured on a real epic tree
+
+The numbers below are counts from the tree this was built on and run against daily:
+**23 epics, 534 sessions, 50 days**, one root spanning **11 repositories**. They are
+that tree's own figures, not a benchmark.
+
+### 1. Context survives the session — 56:1
+
+| | measured |
+|---|---|
+| accumulated epic context (charter, plan, state, ledger, gates, journals) | **3.49M tokens** |
+| injected into a new session so it knows where the work stands | **~2.5k tokens** |
+| compression | **56:1** — best single epic **437:1** |
+| longest-running epic | **85 sessions** |
+| median epic | 18 sessions |
+
+An 85-session epic is 85 times the context window died and the work had to resume
+anyway. None of those resumes needed a hand-written kickoff prompt: the state is
+already in the session before its first tool call.
+
+### 2. A fact is proven once — 5.2× reuse
+
+| | measured |
+|---|---|
+| stable facts declared in ledgers (`L-NN`) | **716** |
+| references to them from state, plans and journals | **3 687** |
+| average reuse per fact | **5.2×** |
+| references to human-only gates (`G-NN`) outside the gate queue | 2 642 |
+
+3 687 times a session cited a known blocker, a non-regression or a trap by ID
+instead of re-deriving it from the code. Neither a task tracker nor a project-wide
+`CLAUDE.md` can do this: neither gives an individual finding a stable ID that later
+sessions can point at.
+
+### 3. "Done" means evidence, not the model's word
+
+| | measured |
+|---|---|
+| slices defined | **292** |
+| closed | **243** |
+| of those, citing a commit SHA or verify-command output | **200** |
+| human-only gates queued, none silently dropped | **219** |
+
+A slice cannot flip to `done` without a verify command's output or a commit hash in
+its evidence column — the skill refuses. What the model believes it finished is not
+the status.
+
+## How this differs from what you already use
+
+| | what it holds | what it leaves out |
+|---|---|---|
+| task tracker (Linear, Jira) | what's left to do | how to work: roles, permission boundaries, traps, evidence |
+| `CLAUDE.md` / `AGENTS.md` | project-wide conventions | where *this* epic stands right now |
+| per-repo memory-bank files | a context set read at task start | slice verification, human-gate queue, several live epics in parallel |
+| spec-driven toolkits | the spec and task breakdown ahead of the code | what actually happened across sessions — evidence, gates, dead ends |
+| a hand-written handoff prompt | whatever you remembered to type | everything you didn't |
 
 ## Anatomy of an epic
 
@@ -160,6 +225,16 @@ last update, kickoff phrase and active step, and flags stray v1 `ACTIVE` files.
   `.git/info/exclude`), pointing one level up. Orchestrators additionally embed
   the Non-negotiables block in every executor prompt regardless of tool.
 
+## Install
+
+```bash
+git clone https://github.com/den2207/epic-tree.git ~/epic-tree && ~/epic-tree/install.sh
+```
+
+Idempotent: links the skills, registers both hooks, runs the smoke suite. Details and
+the manual path: [install.md](install.md). Rationale and the review that shaped the
+design: [docs/design.md](docs/design.md).
+
 ## Testing
 
 ```bash
@@ -173,15 +248,18 @@ truncation of an oversized charter, nested `epics/` merging, stale v1 `ACTIVE`
 flagging, the `EPIC_TREE_ROOT` override, and `epic-list`. Run it after any change
 under `hooks/`.
 
-## Install
+## Limitations
 
-```bash
-git clone https://github.com/den2207/epic-tree.git ~/epic-tree && ~/epic-tree/install.sh
-```
-
-Idempotent: links the skills, registers both hooks, runs the smoke suite. Details and
-the manual path: [install.md](install.md). Rationale and the review that shaped the
-design: [docs/design.md](docs/design.md).
+- **Claude Code is the only first-class adapter.** Other agents read the same files
+  through `AGENTS.md`, but nothing injects context for them automatically — they
+  have to be pointed at the epic root.
+- **Write discipline is prose, not code.** The single-writer and evidence rules live
+  in skill instructions; a model that ignores them corrupts `state.md` and only a
+  later `epic-start` reconcile catches it. The MCP server below is the fix.
+- **No concurrency control.** Two sessions on the *same* epic can both rewrite
+  `state.md`; the convention is one live session per epic, unenforced.
+- **Markdown tables are the schema.** Fixed columns and stable IDs, parsed by grep —
+  robust enough in practice, but a malformed row degrades silently.
 
 ## Roadmap
 
