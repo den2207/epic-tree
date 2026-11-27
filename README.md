@@ -202,6 +202,10 @@ one place. `EPIC_TREE_ROOT=<dir>` forces a specific root from any cwd.
 Visibility: `bin/epic-list.sh [root…]` prints every live epic below a root with its
 last update, kickoff phrase and active step, and flags stray v1 `ACTIVE` files.
 
+EpicBar puts the same list in the macOS menu bar: `bin/build-epicbar.sh` builds
+`~/Applications/EpicBar.app` (macOS 14+, needs `swiftc`). It reads the roots listed
+one per line in `~/.config/epic-tree/roots`; clicking an epic copies its kickoff.
+
 ## Design rules that earn their keep
 
 - **Single writer**: only the coordinator rewrites `state.md`; executors write their

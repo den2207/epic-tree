@@ -4,6 +4,7 @@ contract: rewritten (never appended) by the COORDINATOR only, as the LAST step o
 
 updated: <ISO-8601 timestamp> by <role>
 kickoff: <slug>: <concrete next step, a few words — pasted as the next session's first message; it becomes that chat's title>
+cwd: <absolute directory the next session opens in>
 
 ## Map
 
