@@ -38,8 +38,10 @@ struct Epic: Identifiable, Sendable, Equatable {
   var status = Status.closed
   var note: String?
 
-  var id: String { dir }
-  var statePath: String { dir + "/state.md" }
+  var handoffPath: String?
+
+  var id: String { handoffPath ?? dir }
+  var statePath: String { handoffPath ?? dir + "/state.md" }
 
   var kickoffBody: String? {
     guard let kickoff else { return nil }
@@ -80,6 +82,29 @@ enum StateFile {
   private static func field(_ name: String, in line: String) -> String? {
     guard line.hasPrefix(name + ":") else { return nil }
     return line.dropFirst(name.count + 1).trimmingCharacters(in: .whitespaces)
+  }
+}
+
+enum HandoffFile {
+  /// A handoff is front matter (`title:`, `cwd:`, `plan:`) between `---` lines, then the kickoff text.
+  static func parse(_ text: String, path: String) -> Epic? {
+    let lines = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+    guard lines.first == "---", let end = lines.dropFirst().firstIndex(of: "---") else { return nil }
+    var fields: [String: String] = [:]
+    for line in lines[1..<end] {
+      let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+      if parts.count == 2 { fields[parts[0]] = parts[1] }
+    }
+    let kickoff = lines[(end + 1)...].joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !kickoff.isEmpty else { return nil }
+    let name = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+    var epic = Epic(slug: fields["title"] ?? name, dir: URL(fileURLWithPath: path).deletingLastPathComponent().path)
+    epic.kickoff = kickoff
+    epic.cwd = fields["cwd"]
+    epic.note = fields["plan"]
+    epic.status = .ready
+    epic.handoffPath = path
+    return epic
   }
 }
 
@@ -145,7 +170,27 @@ enum Loader {
       .map { NSString(string: $0).expandingTildeInPath }
   }
 
+  static let handoffsPath = NSHomeDirectory() + "/.claude/handoffs"
+
   static func load() -> [Epic] {
+    (epics() + handoffs()).sorted { $0.modified > $1.modified }
+  }
+
+  static func handoffs() -> [Epic] {
+    let names = (try? FileManager.default.contentsOfDirectory(atPath: handoffsPath)) ?? []
+    return names.filter { $0.hasSuffix(".md") }.compactMap { name in
+      let path = handoffsPath + "/" + name
+      guard let text = try? String(contentsOfFile: path, encoding: .utf8),
+        var epic = HandoffFile.parse(text, path: path)
+      else { return nil }
+      epic.modified = modified(path) ?? .distantPast
+      epic.day = Clock.day(epic.modified)
+      epic.time = Clock.time(epic.modified)
+      return epic
+    }
+  }
+
+  static func epics() -> [Epic] {
     let roots = roots()
     guard !roots.isEmpty,
       let home = Bundle.main.object(forInfoDictionaryKey: "EpicTreeHome") as? String
@@ -182,7 +227,6 @@ enum Loader {
       epic.resolveStatus(pendingGates: Gates.pending(gates), journalModified: openJournal, now: now)
       return epic
     }
-    .sorted { $0.modified > $1.modified }
   }
 
   private static func modified(_ path: String) -> Date? {
@@ -275,7 +319,11 @@ struct EpicRow: View {
       VStack(alignment: .leading, spacing: 2) {
         HStack(spacing: 6) {
           StatusDot(status: epic.status)
-          Text(epic.slug).font(.system(.body, design: .monospaced)).bold()
+          Text(epic.slug).font(.system(.body, design: .monospaced)).bold().lineLimit(1)
+          if epic.handoffPath != nil {
+            Text("handoff").font(.caption2).foregroundStyle(.secondary)
+              .padding(.horizontal, 4).background(Color.primary.opacity(0.1), in: .capsule)
+          }
           Spacer()
           Text(model.copiedID == epic.id ? "Copied" : stamp)
             .font(.caption)
@@ -305,7 +353,7 @@ struct EpicRow: View {
       if let cwd = epic.cwd {
         Button("Copy cwd") { model.copy(cwd, id: epic.id) }
       }
-      Button("Open state.md") { NSWorkspace.shared.open(URL(fileURLWithPath: epic.statePath)) }
+      Button(epic.handoffPath == nil ? "Open state.md" : "Open handoff file") { NSWorkspace.shared.open(URL(fileURLWithPath: epic.statePath)) }
       Button("Show in Finder") {
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: epic.dir)
       }
