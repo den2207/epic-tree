@@ -39,5 +39,40 @@ EOF
 
 bash "$repo/tests/smoke.sh"
 
+if [ "${1:-}" = --autostart ]; then
+  label=dev.epic-tree.EpicBar
+  bin=$HOME/Applications/EpicBar.app/Contents/MacOS/EpicBar
+  plist=$HOME/Library/LaunchAgents/$label.plist
+  [ -x "$bin" ] || { echo "error: $bin not found — run bin/build-epicbar.sh first" >&2; exit 1; }
+  mkdir -p "$(dirname "$plist")"
+  cat > "$plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$label</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$bin</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key><false/>
+  </dict>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>AssociatedBundleIdentifiers</key>
+  <array>
+    <string>$label</string>
+  </array>
+</dict>
+</plist>
+PLIST
+  launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+  pkill -x EpicBar 2>/dev/null || true
+  launchctl bootstrap "gui/$(id -u)" "$plist"
+  echo "✓ EpicBar starts at login ($plist)"
+fi
+
 echo
 echo "Done. Restart Claude Code sessions to pick up the hook and skills."

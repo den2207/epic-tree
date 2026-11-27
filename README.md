@@ -205,6 +205,9 @@ last update, kickoff phrase and active step, and flags stray v1 `ACTIVE` files.
 EpicBar puts the same list in the macOS menu bar: `bin/build-epicbar.sh` builds
 `~/Applications/EpicBar.app` (macOS 14+, needs `swiftc`). It reads the roots listed
 one per line in `~/.config/epic-tree/roots`; clicking an epic copies its kickoff.
+`install.sh --autostart` adds a LaunchAgent that starts it at login; to undo, run
+`launchctl bootout gui/$(id -u)/dev.epic-tree.EpicBar` and delete
+`~/Library/LaunchAgents/dev.epic-tree.EpicBar.plist`.
 
 ## Design rules that earn their keep
 
