@@ -13,23 +13,33 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
 1. **Finalize your journal file** (`journal/<date>-<HHMM>-<role>.md`): Done (with
    commit hashes), Discovered, Decisions, Proposals, Next. A handoff without a
    finalized journal entry did not happen.
-2. If you are an **executor**: stop here. You do not touch state/ledger/gated/plan —
+2. **Release the worktree** (all roles): when this session runs in an app-made worktree
+   (`.claude/worktrees/<name>`) and the next session is a NEW chat, `git worktree remove`
+   it (never `--force`) as the last action before your final reply, after every file
+   write of your role. Only when commands prove nothing is lost: `git status` clean,
+   and `git rev-list --count origin/<branch>..HEAD` is 0 or the branch is reachable
+   from `origin/main`; a missing upstream, detached HEAD, a running build or any
+   command error is a failed precondition. Failed → skip, say so in one line in the
+   final reply and in the journal's Next; never commit, push or stash to make it pass.
+   Delete the worktree's own `./DerivedData` first; the global Xcode DerivedData is
+   disk-guard's job, not this step's. state.md names the branch, never the worktree path.
+3. If you are an **executor**: stop here. You do not touch state/ledger/gated/plan —
    your Proposals section carries anything the coordinator must apply.
 
 ## Steps (coordinator only)
 
-3. **Merge executor journals** written since the last state update: apply their
+4. **Merge executor journals** written since the last state update: apply their
    Proposals (or record why rejected — in your own journal, one line each).
-4. **Ledger**: append new stable facts as `L-NN | fact | evidence | date`. Facts that
+5. **Ledger**: append new stable facts as `L-NN | fact | evidence | date`. Facts that
    outlive the epic also get a one-line pointer in the orchestrator's global memory.
-5. **Gated actions**: add new G-NN blocks (copy-paste-ready command, cwd, account,
+6. **Gated actions**: add new G-NN blocks (copy-paste-ready command, cwd, account,
    expected output); mark executed ones done. Then archive: append every done block
    from BEFORE this session to `gated-actions.ARCHIVE.md` in the same epic dir
    (keep the `## G-NN` headings verbatim so grep still finds them) and delete it
    from the main file — it keeps only open blocks plus blocks closed this session.
-6. **plan.md statuses**: flip `status` to done ONLY with evidence (verify-command
+7. **plan.md statuses**: flip `status` to done ONLY with evidence (verify-command
    output or commit hash) recorded in the `evidence` column. No evidence — stays todo.
-7. **Rewrite state.md** (the commit marker, LAST write): active slice, per-repo git
+8. **Rewrite state.md** (the commit marker, LAST write): active slice, per-repo git
    state verified against `git log`/`status` (never from memory), next step,
    blocked-on, relevant L-IDs, `updated: <ISO ts> by coordinator`. Max 40 lines.
    Two parts are mandatory, in this order, right after `updated:`:
@@ -43,7 +53,7 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
      done slices into `S-01..S-04`), exactly one `<- NEXT` marker, every blocked slice
      names its G-NN, and one `After:` line saying what follows the epic. It is the
      first thing the next session and the human read: done / not done / what next.
-8. **Epic finished?** All slices done with evidence → write the final journal entry,
+9. **Epic finished?** All slices done with evidence → write the final journal entry,
    then `mv epics/<slug> epics/_archive/<slug>` — the epic stops being live and
    leaves the roster. Only if NO live epic remains under the root: remove the
    epic-tree marked block from `<root>/AGENTS.md` (only the block — text outside
@@ -54,16 +64,18 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
    final journal entry and the closing message carry the final `## Map` — every
    slice `[x]`, or `[-]` with its reason — and an `After:` line naming the
    follow-up epics and the debts that outlive this one.
-9. **Close the chat** (coordinator): your LAST message repeats the `## Map` block
-   verbatim and ends with exactly ONE sentence telling the human how to open the
-   next session — the cwd to start it in and the kickoff phrase to paste, copied
-   from state.md (`Next session: open a chat in ~/Work/<group> and paste
-   "epic payments: G3 R2 — deploy after key rotation".`). Nothing after it.
+10. **Close the chat** (coordinator): your LAST message repeats the `## Map` block
+   verbatim and ends, unasked, with how to open the next session: ONE line naming
+   the cwd (`Next session — open a chat in ~/Work/<group> and paste:`), then the
+   kickoff phrase copied from state.md, alone in a fenced code block with no
+   language tag (`epic payments: G3 R2 — deploy after key rotation`) — the block
+   is what the human copies. Nothing after it.
 
 ## Guardrails
 
 - Coordinator handoff without a rewritten state.md = handoff not performed.
-- A closing message without the Map and the single next-session sentence = handoff
-  not performed: the human must know what is done, what is not, and what to paste.
+- A closing message without the Map and the copy-paste kickoff block = handoff
+  not performed: the human must know what is done, what is not, and what to paste
+  without having to ask.
 - state.md is rewritten from verified reality, never from conversation memory.
 - Nothing valuable may live only in chat: if it matters, it is now in a file.
