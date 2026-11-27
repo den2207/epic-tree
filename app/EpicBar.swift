@@ -116,6 +116,8 @@ final class Model {
   var epics: [Epic] = []
   var copiedID: String?
   var today = Model.dayString()
+  var weekStart = Model.weekStart(weeksAgo: 0)
+  var lastWeekStart = Model.weekStart(weeksAgo: 1)
 
   var waiting: Int { epics.count { $0.kickoff != nil && $0.updated.hasPrefix(today) } }
 
@@ -131,6 +133,8 @@ final class Model {
   func refresh() async {
     epics = await Task.detached { Loader.load() }.value
     today = Model.dayString()
+    weekStart = Model.weekStart(weeksAgo: 0)
+    lastWeekStart = Model.weekStart(weeksAgo: 1)
   }
 
   func copy(_ text: String, id: String) {
@@ -143,11 +147,17 @@ final class Model {
     }
   }
 
-  static func dayString() -> String {
+  static func dayString(_ date: Date = .now) -> String {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.dateFormat = "yyyy-MM-dd"
-    return formatter.string(from: .now)
+    return formatter.string(from: date)
+  }
+
+  static func weekStart(weeksAgo: Int) -> String {
+    let calendar = Calendar(identifier: .iso8601)
+    let start = calendar.dateInterval(of: .weekOfYear, for: .now)?.start ?? .now
+    return dayString(calendar.date(byAdding: .day, value: -7 * weeksAgo, to: start) ?? start)
   }
 }
 
@@ -199,13 +209,17 @@ struct EpicRow: View {
 
 struct PanelView: View {
   let model: Model
-  @State private var showEarlier = false
+  @State private var showThisWeek = true
+  @State private var showLastWeek = false
+  @State private var showOlder = false
   @State private var showIdle = false
 
   var body: some View {
     let withKickoff = model.epics.filter { $0.kickoff != nil }
     let today = withKickoff.filter { $0.updated.hasPrefix(model.today) }
-    let earlier = withKickoff.filter { !$0.updated.hasPrefix(model.today) }
+    let thisWeek = withKickoff.filter { $0.updated >= model.weekStart && $0.updated < model.today }
+    let lastWeek = withKickoff.filter { $0.updated >= model.lastWeekStart && $0.updated < model.weekStart }
+    let older = withKickoff.filter { $0.updated < model.lastWeekStart }
     let idle = model.epics.filter { $0.kickoff == nil }
 
     VStack(spacing: 0) {
@@ -219,16 +233,10 @@ struct PanelView: View {
             header("Today")
             rows(today)
           }
-          if !earlier.isEmpty {
-            DisclosureGroup(isExpanded: $showEarlier) { rows(earlier) } label: {
-              header("Earlier (\(earlier.count))")
-            }
-          }
-          if !idle.isEmpty {
-            DisclosureGroup(isExpanded: $showIdle) { rows(idle) } label: {
-              header("No kickoff (\(idle.count))")
-            }
-          }
+          group("This week", thisWeek, $showThisWeek)
+          group("Last week", lastWeek, $showLastWeek)
+          group("Older", older, $showOlder)
+          group("No kickoff", idle, $showIdle)
         }
         .padding(8)
       }
@@ -247,6 +255,15 @@ struct PanelView: View {
 
   private func header(_ title: String) -> some View {
     Text(title.uppercased()).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8).padding(.top, 4)
+  }
+
+  @ViewBuilder
+  private func group(_ title: String, _ epics: [Epic], _ expanded: Binding<Bool>) -> some View {
+    if !epics.isEmpty {
+      DisclosureGroup(isExpanded: expanded) { rows(epics) } label: {
+        header("\(title) (\(epics.count))")
+      }
+    }
   }
 
   private func rows(_ epics: [Epic]) -> some View {
