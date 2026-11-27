@@ -12,6 +12,17 @@ try: print(json.load(sys.stdin).get(sys.argv[1],"") or "")
 except Exception: pass' "$1" 2>/dev/null
 }
 
+# Session markers, read by EpicBar: one file per Claude session holding "<epic dir>\t<working|idle>".
+SESSIONS_DIR=${EPIC_TREE_SESSIONS:-$HOME/.claude/epic-tree/sessions}
+session_mark() { # session-id epic-dir state
+  case $1 in ""|*/*) return 0;; esac
+  mkdir -p "$SESSIONS_DIR" && printf '%s\t%s\n' "$2" "$3" > "$SESSIONS_DIR/$1"
+}
+session_epic() { # session-id -> epic dir, empty when the session holds no epic
+  case $1 in ""|*/*) return 0;; esac
+  [ -f "$SESSIONS_DIR/$1" ] && cut -f1 "$SESSIONS_DIR/$1"
+}
+
 emit() {
   printf '%s' "$2" | python3 -c 'import json,sys
 print(json.dumps({"hookSpecificOutput":{"hookEventName":sys.argv[1],"additionalContext":sys.stdin.read()}}))' "$1"

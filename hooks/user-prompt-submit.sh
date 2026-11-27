@@ -10,6 +10,9 @@ command -v python3 >/dev/null 2>&1 || exit 0
 input=$(cat)
 prompt=$(printf '%s' "$input" | json_field prompt)
 [ -n "$prompt" ] || exit 0
+sid=$(printf '%s' "$input" | json_field session_id)
+held=$(session_epic "$sid")
+[ -n "$held" ] && session_mark "$sid" "$held" working
 cwd=$(printf '%s' "$input" | json_field cwd)
 [ -n "$cwd" ] && [ -d "$cwd" ] || cwd=$PWD
 start=$(map_worktree "$cwd")
@@ -35,6 +38,7 @@ case ${#matches[@]} in
   0) exit 0;;
   1)
     d=${matches[0]}
+    session_mark "$sid" "$d" working
     header="[epic-tree] epic selected by this message: $(basename "$d") @ $d. Follow the charter Non-negotiables; run the epic-start skill before working. If this epic is already the one in progress in this session, treat this as a state resync (state.md may have been rewritten by another session's handoff)."
     emit UserPromptSubmit "$(epic_context "$d" "$header")";;
   *)

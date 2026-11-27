@@ -125,9 +125,18 @@ enum Gates {
 extension Epic {
   static let workingWindow: TimeInterval = 20 * 60
 
-  mutating func resolveStatus(pendingGates: [String: String], journalModified: Date?, now: Date) {
+  static let staleMarker: TimeInterval = 6 * 3600
+
+  mutating func resolveStatus(
+    pendingGates: [String: String], journalModified: Date?, session: SessionMarker?, now: Date
+  ) {
     let named = blockers.flatMap { $0.matches(of: /G-\d+/).map { String($0.output) } }
-    if let journalModified, now.timeIntervalSince(journalModified) < Epic.workingWindow {
+    if let session, session.working, now.timeIntervalSince(session.modified) < Epic.staleMarker {
+      status = .working
+    } else if let session, !session.working {
+      status = .waiting
+      note = "Chat is waiting for your reply"
+    } else if let journalModified, now.timeIntervalSince(journalModified) < Epic.workingWindow {
       status = .working
     } else if let gate = named.first(where: { pendingGates[$0] != nil }) {
       status = .waiting
@@ -138,6 +147,26 @@ extension Epic {
     } else {
       status = kickoff == nil ? .closed : .ready
     }
+  }
+}
+
+struct SessionMarker: Sendable {
+  var working: Bool
+  var modified: Date
+
+  /// Reads the markers the epic-tree hooks write, keyed by epic dir; the newest marker wins.
+  static func load(from directory: String) -> [String: SessionMarker] {
+    var result: [String: SessionMarker] = [:]
+    for name in (try? FileManager.default.contentsOfDirectory(atPath: directory)) ?? [] {
+      let path = directory + "/" + name
+      guard let text = try? String(contentsOfFile: path, encoding: .utf8),
+        let modified = (try? FileManager.default.attributesOfItem(atPath: path))?[.modificationDate] as? Date
+      else { continue }
+      let parts = text.trimmingCharacters(in: .newlines).split(separator: "\t").map(String.init)
+      guard parts.count == 2, (result[parts[0]]?.modified ?? .distantPast) < modified else { continue }
+      result[parts[0]] = SessionMarker(working: parts[1] == "working", modified: modified)
+    }
+    return result
   }
 }
 
@@ -209,6 +238,7 @@ enum Loader {
 
     let files = FileManager.default
     let now = Date.now
+    let sessions = SessionMarker.load(from: NSHomeDirectory() + "/.claude/epic-tree/sessions")
     return Listing.parse(output).compactMap { root, slug in
       let candidates = ["\(root)/epics/\(slug)", "\(root)/.claude/epics/\(slug)"]
       guard let dir = candidates.first(where: { files.fileExists(atPath: $0) }) else { return nil }
@@ -220,11 +250,11 @@ enum Loader {
       let journalModified = journal.compactMap { modified(dir + "/journal/" + $0) }.max()
       let stateModified = modified(epic.statePath) ?? .distantPast
       let openJournal = journalModified.flatMap { $0 > stateModified ? $0 : nil }
-      epic.modified = max(stateModified, journalModified ?? .distantPast)
+      epic.modified = max(stateModified, journalModified ?? .distantPast, sessions[dir]?.modified ?? .distantPast)
       epic.day = Clock.day(epic.modified)
       epic.time = Clock.time(epic.modified)
       let gates = (try? String(contentsOfFile: dir + "/gated-actions.md", encoding: .utf8)) ?? ""
-      epic.resolveStatus(pendingGates: Gates.pending(gates), journalModified: openJournal, now: now)
+      epic.resolveStatus(pendingGates: Gates.pending(gates), journalModified: openJournal, session: sessions[dir], now: now)
       return epic
     }
   }

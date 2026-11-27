@@ -17,7 +17,8 @@ echo "✓ skills linked into ~/.claude/skills: epic-new, epic-start, epic-handof
 python3 - "$repo" <<'EOF'
 import json, sys, pathlib
 repo = sys.argv[1]
-hooks = {"SessionStart": "session-start.sh", "UserPromptSubmit": "user-prompt-submit.sh"}
+hooks = {"SessionStart": "session-start.sh", "UserPromptSubmit": "user-prompt-submit.sh",
+         "Stop": "session-mark.sh idle", "SessionEnd": "session-mark.sh end"}
 p = pathlib.Path.home() / ".claude" / "settings.json"
 s = json.loads(p.read_text()) if p.exists() else {}
 for event, script in hooks.items():
