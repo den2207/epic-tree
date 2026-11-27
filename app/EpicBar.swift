@@ -1,13 +1,42 @@
 import AppKit
 import SwiftUI
 
+enum Status: String, Sendable {
+  case working, waiting, blocked, ready, closed
+
+  var label: String {
+    switch self {
+    case .working: "Working now"
+    case .waiting: "Waiting for you"
+    case .blocked: "Blocked"
+    case .ready: "Ready for the next chat"
+    case .closed: "Closed or no kickoff"
+    }
+  }
+
+  var color: Color {
+    switch self {
+    case .working: .green
+    case .waiting: .orange
+    case .blocked: .red
+    case .ready: .blue
+    case .closed: .gray
+    }
+  }
+}
+
 struct Epic: Identifiable, Sendable, Equatable {
   var slug: String
   var dir: String
-  var updated = ""
   var kickoff: String?
   var cwd: String?
   var step: String?
+  var blockers: [String] = []
+  var modified = Date.distantPast
+  var day = ""
+  var time = ""
+  var status = Status.closed
+  var note: String?
 
   var id: String { dir }
   var statePath: String { dir + "/state.md" }
@@ -20,27 +49,30 @@ struct Epic: Identifiable, Sendable, Equatable {
     return kickoff
   }
 
-  func stamp(today: String) -> String {
-    let parts = updated.split(separator: "T", maxSplits: 1).map(String.init)
-    guard let day = parts.first else { return "—" }
-    return day == today && parts.count == 2 ? String(parts[1].prefix(5)) : day
+  var tooltip: String {
+    [status.label, note, step].compactMap { $0 }.joined(separator: "\n")
   }
 }
 
 enum StateFile {
   static func apply(_ text: String, to epic: inout Epic) {
-    var inActiveSlice = false
+    var section = ""
     for line in text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
-      if let value = field("updated", in: line), epic.updated.isEmpty {
-        epic.updated = String(value.split(separator: " ").first ?? "")
-      } else if let value = field("kickoff", in: line), epic.kickoff == nil {
-        epic.kickoff = value.hasPrefix("(none") || value.isEmpty ? nil : value
+      let trimmed = line.trimmingCharacters(in: .whitespaces)
+      if let value = field("kickoff", in: line), epic.kickoff == nil {
+        epic.kickoff = value.hasPrefix("(none") || value.count < 2 ? nil : value
       } else if let value = field("cwd", in: line), epic.cwd == nil {
         epic.cwd = value.isEmpty ? nil : value
       } else if line.hasPrefix("## ") {
-        inActiveSlice = line.hasPrefix("## Active slice")
-      } else if inActiveSlice, epic.step == nil, !line.trimmingCharacters(in: .whitespaces).isEmpty {
-        epic.step = line
+        section = line
+      } else if trimmed.isEmpty || trimmed.hasPrefix("<!--") {
+        continue
+      } else if section.hasPrefix("## Active slice"), epic.step == nil {
+        epic.step = trimmed
+      } else if section.hasPrefix("## Map"), trimmed.hasPrefix("[!]") {
+        epic.blockers.append(trimmed)
+      } else if section.hasPrefix("## Blocked on"), !["nothing", "none", "—", "-"].contains(trimmed.lowercased()) {
+        epic.blockers.append(trimmed)
       }
     }
   }
@@ -48,6 +80,39 @@ enum StateFile {
   private static func field(_ name: String, in line: String) -> String? {
     guard line.hasPrefix(name + ":") else { return nil }
     return line.dropFirst(name.count + 1).trimmingCharacters(in: .whitespaces)
+  }
+}
+
+enum Gates {
+  /// Maps gate id to its heading for every `## G-NN … pending` heading in gated-actions.md.
+  static func pending(_ text: String) -> [String: String] {
+    var result: [String: String] = [:]
+    for line in text.split(separator: "\n").map(String.init)
+    where line.hasPrefix("#") && line.localizedCaseInsensitiveContains("pending") {
+      if let id = line.firstMatch(of: /G-\d+/) {
+        result[String(id.output)] = line.drop { $0 == "#" || $0 == " " }.description
+      }
+    }
+    return result
+  }
+}
+
+extension Epic {
+  static let workingWindow: TimeInterval = 20 * 60
+
+  mutating func resolveStatus(pendingGates: [String: String], journalModified: Date?, now: Date) {
+    let named = blockers.flatMap { $0.matches(of: /G-\d+/).map { String($0.output) } }
+    if let journalModified, now.timeIntervalSince(journalModified) < Epic.workingWindow {
+      status = .working
+    } else if let gate = named.first(where: { pendingGates[$0] != nil }) {
+      status = .waiting
+      note = pendingGates[gate]
+    } else if let first = blockers.first {
+      status = .blocked
+      note = first
+    } else {
+      status = kickoff == nil ? .closed : .ready
+    }
   }
 }
 
@@ -98,6 +163,7 @@ enum Loader {
     process.waitUntilExit()
 
     let files = FileManager.default
+    let now = Date.now
     return Listing.parse(output).compactMap { root, slug in
       let candidates = ["\(root)/epics/\(slug)", "\(root)/.claude/epics/\(slug)"]
       guard let dir = candidates.first(where: { files.fileExists(atPath: $0) }) else { return nil }
@@ -105,9 +171,40 @@ enum Loader {
       if let text = try? String(contentsOfFile: epic.statePath, encoding: .utf8) {
         StateFile.apply(text, to: &epic)
       }
+      let journal = (try? files.contentsOfDirectory(atPath: dir + "/journal")) ?? []
+      let journalModified = journal.compactMap { modified(dir + "/journal/" + $0) }.max()
+      let stateModified = modified(epic.statePath) ?? .distantPast
+      let openJournal = journalModified.flatMap { $0 > stateModified ? $0 : nil }
+      epic.modified = max(stateModified, journalModified ?? .distantPast)
+      epic.day = Clock.day(epic.modified)
+      epic.time = Clock.time(epic.modified)
+      let gates = (try? String(contentsOfFile: dir + "/gated-actions.md", encoding: .utf8)) ?? ""
+      epic.resolveStatus(pendingGates: Gates.pending(gates), journalModified: openJournal, now: now)
       return epic
     }
-    .sorted { $0.updated > $1.updated }
+    .sorted { $0.modified > $1.modified }
+  }
+
+  private static func modified(_ path: String) -> Date? {
+    (try? FileManager.default.attributesOfItem(atPath: path))?[.modificationDate] as? Date
+  }
+}
+
+enum Clock {
+  static func day(_ date: Date = .now) -> String { format(date, "yyyy-MM-dd") }
+  static func time(_ date: Date) -> String { format(date, "HH:mm") }
+
+  static func weekStart(weeksAgo: Int) -> String {
+    let calendar = Calendar(identifier: .iso8601)
+    let start = calendar.dateInterval(of: .weekOfYear, for: .now)?.start ?? .now
+    return day(calendar.date(byAdding: .day, value: -7 * weeksAgo, to: start) ?? start)
+  }
+
+  private static func format(_ date: Date, _ pattern: String) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = pattern
+    return formatter.string(from: date)
   }
 }
 
@@ -115,11 +212,13 @@ enum Loader {
 final class Model {
   var epics: [Epic] = []
   var copiedID: String?
-  var today = Model.dayString()
-  var weekStart = Model.weekStart(weeksAgo: 0)
-  var lastWeekStart = Model.weekStart(weeksAgo: 1)
+  var today = Clock.day()
+  var weekStart = Clock.weekStart(weeksAgo: 0)
+  var lastWeekStart = Clock.weekStart(weeksAgo: 1)
 
-  var waiting: Int { epics.count { $0.kickoff != nil && $0.updated.hasPrefix(today) } }
+  var needsYou: Int {
+    epics.count { ($0.status == .waiting || $0.status == .ready) && $0.day >= weekStart }
+  }
 
   init() {
     Task { [weak self] in
@@ -132,9 +231,9 @@ final class Model {
 
   func refresh() async {
     epics = await Task.detached { Loader.load() }.value
-    today = Model.dayString()
-    weekStart = Model.weekStart(weeksAgo: 0)
-    lastWeekStart = Model.weekStart(weeksAgo: 1)
+    today = Clock.day()
+    weekStart = Clock.weekStart(weeksAgo: 0)
+    lastWeekStart = Clock.weekStart(weeksAgo: 1)
   }
 
   func copy(_ text: String, id: String) {
@@ -146,18 +245,21 @@ final class Model {
       if copiedID == id { copiedID = nil }
     }
   }
+}
 
-  static func dayString(_ date: Date = .now) -> String {
-    let formatter = DateFormatter()
-    formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.dateFormat = "yyyy-MM-dd"
-    return formatter.string(from: date)
-  }
+struct StatusDot: View {
+  let status: Status
+  @State private var dimmed = false
 
-  static func weekStart(weeksAgo: Int) -> String {
-    let calendar = Calendar(identifier: .iso8601)
-    let start = calendar.dateInterval(of: .weekOfYear, for: .now)?.start ?? .now
-    return dayString(calendar.date(byAdding: .day, value: -7 * weeksAgo, to: start) ?? start)
+  var body: some View {
+    Circle()
+      .fill(status.color)
+      .frame(width: 8, height: 8)
+      .opacity(status == .working && dimmed ? 0.25 : 1)
+      .onAppear {
+        guard status == .working else { return }
+        withAnimation(.easeInOut(duration: 0.9).repeatForever()) { dimmed = true }
+      }
   }
 }
 
@@ -171,12 +273,16 @@ struct EpicRow: View {
       if let kickoff = epic.kickoff { model.copy(kickoff, id: epic.id) }
     } label: {
       VStack(alignment: .leading, spacing: 2) {
-        HStack {
+        HStack(spacing: 6) {
+          StatusDot(status: epic.status)
           Text(epic.slug).font(.system(.body, design: .monospaced)).bold()
           Spacer()
-          Text(model.copiedID == epic.id ? "Copied" : epic.stamp(today: model.today))
+          Text(model.copiedID == epic.id ? "Copied" : stamp)
             .font(.caption)
             .foregroundStyle(model.copiedID == epic.id ? Color.accentColor : .secondary)
+        }
+        if epic.status == .waiting || epic.status == .blocked, let note = epic.note {
+          Text(note).font(.caption).foregroundStyle(epic.status.color).lineLimit(1)
         }
         if let body = epic.kickoffBody {
           Text(body).font(.callout).foregroundStyle(.secondary).lineLimit(2)
@@ -194,7 +300,7 @@ struct EpicRow: View {
     .buttonStyle(.plain)
     .disabled(epic.kickoff == nil)
     .onHover { hovering = $0 }
-    .help(epic.step ?? "")
+    .help(epic.tooltip)
     .contextMenu {
       if let cwd = epic.cwd {
         Button("Copy cwd") { model.copy(cwd, id: epic.id) }
@@ -205,6 +311,11 @@ struct EpicRow: View {
       }
     }
   }
+
+  private var stamp: String {
+    let when = epic.day == model.today ? epic.time : epic.day
+    return epic.status == .working ? "working · \(when)" : when
+  }
 }
 
 struct PanelView: View {
@@ -212,15 +323,15 @@ struct PanelView: View {
   @State private var showThisWeek = true
   @State private var showLastWeek = false
   @State private var showOlder = false
-  @State private var showIdle = false
+  @State private var showClosed = false
 
   var body: some View {
-    let withKickoff = model.epics.filter { $0.kickoff != nil }
-    let today = withKickoff.filter { $0.updated.hasPrefix(model.today) }
-    let thisWeek = withKickoff.filter { $0.updated >= model.weekStart && $0.updated < model.today }
-    let lastWeek = withKickoff.filter { $0.updated >= model.lastWeekStart && $0.updated < model.weekStart }
-    let older = withKickoff.filter { $0.updated < model.lastWeekStart }
-    let idle = model.epics.filter { $0.kickoff == nil }
+    let open = model.epics.filter { $0.status != .closed }
+    let today = open.filter { $0.day == model.today }
+    let thisWeek = open.filter { $0.day >= model.weekStart && $0.day < model.today }
+    let lastWeek = open.filter { $0.day >= model.lastWeekStart && $0.day < model.weekStart }
+    let older = open.filter { $0.day < model.lastWeekStart }
+    let closed = model.epics.filter { $0.status == .closed }
 
     VStack(spacing: 0) {
       ScrollView {
@@ -236,11 +347,20 @@ struct PanelView: View {
           group("This week", thisWeek, $showThisWeek)
           group("Last week", lastWeek, $showLastWeek)
           group("Older", older, $showOlder)
-          group("No kickoff", idle, $showIdle)
+          group("Closed or no kickoff", closed, $showClosed)
         }
         .padding(8)
       }
       Divider()
+      HStack(spacing: 10) {
+        ForEach([Status.working, .waiting, .blocked, .ready], id: \.self) { status in
+          HStack(spacing: 4) {
+            StatusDot(status: status)
+            Text(status.label).font(.caption2).foregroundStyle(.secondary)
+          }
+        }
+      }
+      .padding(.top, 6)
       HStack {
         Text("Click a row to copy its kickoff").font(.caption).foregroundStyle(.secondary)
         Spacer()
@@ -250,7 +370,7 @@ struct PanelView: View {
       .controlSize(.small)
       .padding(8)
     }
-    .frame(width: 460, height: 540)
+    .frame(width: 480, height: 560)
   }
 
   private func header(_ title: String) -> some View {
@@ -278,7 +398,7 @@ struct EpicBarApp: App {
     MenuBarExtra {
       PanelView(model: model)
     } label: {
-      Label("\(model.waiting)", systemImage: "square.stack.3d.up").labelStyle(.titleAndIcon)
+      Label("\(model.needsYou)", systemImage: "square.stack.3d.up").labelStyle(.titleAndIcon)
     }
     .menuBarExtraStyle(.window)
   }
@@ -286,7 +406,7 @@ struct EpicBarApp: App {
 
 if CommandLine.arguments.contains("--dump") {
   for epic in Loader.load() {
-    print([epic.slug, epic.updated, epic.cwd ?? "-", epic.kickoff ?? "-"].joined(separator: "\t"))
+    print([epic.slug, epic.day, epic.time, epic.status.rawValue, epic.note ?? "-"].joined(separator: "\t"))
   }
 } else {
   EpicBarApp.main()
