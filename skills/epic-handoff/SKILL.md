@@ -47,7 +47,9 @@ pointing at the previous consistent snapshot; the next epic-start reconciles the
      session. It must name the slug and the concrete next step
      (`epic payments: G3 R2 — deploy after key rotation`), never a generic "continue
      the epic": chat titles are auto-generated from the first message, and a generic
-     kickoff makes every session in the list look identical.
+     kickoff makes every session in the list look identical. Directly below it goes
+     `cwd:` — the absolute directory the next session should open in; EpicBar shows
+     it next to the kickoff.
    - `## Map` — the cheap ASCII map of the whole epic, rebuilt from plan.md statuses
      (format and legend in `templates/state.md`): one line per slice (fold runs of
      done slices into `S-01..S-04`), exactly one `<- NEXT` marker, every blocked slice

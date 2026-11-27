@@ -104,5 +104,26 @@ out=$(bash "$HOOKS/../bin/epic-list.sh" "$g")
 echo "$out" | grep -q 'payments' && ! echo "$out" | grep -q '^  old '
 check "epic-list" $?
 
+S=$(mktemp -d); export EPIC_TREE_SESSIONS="$S/sessions"
+mkdir -p "$S/root/epics"; mkepic "$S/root/epics" billing 2026-01-01T10:00
+sprompt() { python3 -c 'import json,sys; print(json.dumps({"cwd":sys.argv[1],"prompt":sys.argv[2],"session_id":sys.argv[3]}))' "$S/root" "$1" "$2" | env -u EPIC_TREE_ROOT bash "$HOOKS/user-prompt-submit.sh" >/dev/null; }
+mark() { printf '{"session_id":"%s"}' "$2" | bash "$HOOKS/session-mark.sh" "$1"; }
+sprompt "epic billing: go" s1
+grep -q "billing.working" "$S/sessions/s1" 2>/dev/null
+check "session-marker-working" $?
+mark idle s1
+grep -q "billing.idle" "$S/sessions/s1" 2>/dev/null
+check "session-marker-idle" $?
+sprompt "carry on" s1
+grep -q "billing.working" "$S/sessions/s1" 2>/dev/null
+check "session-marker-follow-up" $?
+sleep 1; touch "$S/root/epics/billing/state.md"; mark idle s1
+[ ! -e "$S/sessions/s1" ]
+check "session-marker-released-by-handoff" $?
+sprompt "epic billing: again" s2; mark end s2
+[ ! -e "$S/sessions/s2" ]
+check "session-marker-removed-at-end" $?
+rm -rf "$S"; unset EPIC_TREE_SESSIONS
+
 echo "----- $pass PASS / $fail FAIL"
 [ "$fail" -eq 0 ]
